@@ -81,15 +81,241 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
     <script>
-        // ... 这里插入全部前端 JS 逻辑，包括：
-        // 1. window.callAPI 封装
-        // 2. 拖拽/缩放小窗
-        // 3. 跑酷小游戏（Canvas）
-        // 4. 电子足迹地图（Leaflet + GPX/GeoJSON 上传/持久化）
-        // 5. 音乐播放器（MP3 上传/播放/频谱）
-        // 6. 实时评论区（API交互）
-        // 7. 时光邮局（API交互）
-        // ...
+        // ========== 1. window.callAPI 封装 ==========
+        window.callAPI = async function (route, payload = undefined, method = undefined) {
+            let url = route.startsWith('/api/') ? route : '/api/' + route;
+            let options = { headers: { 'Content-Type': 'application/json' } };
+            if (payload) {
+                options.body = JSON.stringify(payload);
+                options.method = method || 'POST';
+            } else {
+                options.method = method || 'GET';
+            }
+            const res = await fetch(url, options);
+            return await res.json();
+        };
+
+        // ========== 2. 拖拽/缩放小窗 ==========
+        const windowsRoot = document.getElementById('windows-root');
+        const windowTemplates = {
+            game: () => `<div class="window-header flex justify-between items-center p-2 draggable"><span>跑酷小游戏</span><span class="window-close">×</span></div><canvas id="game-canvas" width="320" height="180" class="bg-black block mx-auto my-2 rounded"></canvas>`,
+            map: () => `<div class="window-header flex justify-between items-center p-2 draggable"><span>电子足迹地图</span><span class="window-close">×</span></div><div id="map" class="w-[320px] h-[240px] rounded"></div><input type="file" id="gpx-upload" accept=".gpx,.geojson" class="block mx-auto my-2" />`,
+            music: () => `<div class="window-header flex justify-between items-center p-2 draggable"><span>音乐播放器</span><span class="window-close">×</span></div><input type="file" id="mp3-upload" accept="audio/mp3" class="block mx-auto my-2" /><audio id="audio-player" controls class="w-full"></audio><canvas id="music-fft" width="300" height="60" class="block mx-auto my-2 bg-black rounded"></canvas>`,
+            comment: () => `<div class="window-header flex justify-between items-center p-2 draggable"><span>实时评论区</span><span class="window-close">×</span></div><div id="comments-list" class="max-h-40 overflow-y-auto"></div><form id="comment-form" class="flex gap-2 mt-2"><input id="comment-name" placeholder="昵称" class="flex-1 px-2 py-1 rounded bg-gray-800 text-white" required><input id="comment-content" placeholder="内容" class="flex-2 px-2 py-1 rounded bg-gray-800 text-white" required><button class="bg-cyan-600 px-2 rounded text-white">发送</button></form>`,
+            timecapsule: () => `<div class="window-header flex justify-between items-center p-2 draggable"><span>时光邮局</span><span class="window-close">×</span></div><form id="capsule-form" class="flex flex-col gap-2 mt-2"><input id="capsule-email" type="email" placeholder="收信邮箱" class="px-2 py-1 rounded bg-gray-800 text-white" required><input id="capsule-date" type="datetime-local" class="px-2 py-1 rounded bg-gray-800 text-white" required><textarea id="capsule-content" placeholder="写给未来的话..." class="px-2 py-1 rounded bg-gray-800 text-white" required></textarea><button class="bg-cyan-600 px-2 rounded text-white">投递</button></form><div id="capsule-list" class="max-h-32 overflow-y-auto mt-2"></div>`
+        };
+        let zIndex = 10;
+        function createWindow(type) {
+            const win = document.createElement('div');
+            win.className = 'window fixed left-1/2 top-1/2 p-0 min-w-[320px] min-h-[60px]';
+            win.style.zIndex = ++zIndex;
+            win.innerHTML = windowTemplates[type]();
+            win.style.left = '50%';
+            win.style.top = '50%';
+            win.style.transform = 'translate(-50%, -50%)';
+            // 拖拽
+            const header = win.querySelector('.window-header');
+            let offsetX, offsetY, dragging = false;
+            header.addEventListener('mousedown', e => {
+                dragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                win.style.zIndex = ++zIndex;
+            });
+            document.addEventListener('mousemove', e => {
+                if (dragging) {
+                    win.style.left = e.clientX - offsetX + 'px';
+                    win.style.top = e.clientY - offsetY + 'px';
+                    win.style.transform = '';
+                }
+            });
+            document.addEventListener('mouseup', () => dragging = false);
+            // 关闭
+            win.querySelector('.window-close').onclick = () => win.remove();
+            windowsRoot.appendChild(win);
+            return win;
+        }
+        document.querySelectorAll('.window-btn').forEach(btn => {
+            btn.onclick = () => {
+                createWindow(btn.dataset.window);
+                if (btn.dataset.window === 'game') initGame();
+                if (btn.dataset.window === 'map') initMap();
+                if (btn.dataset.window === 'music') initMusic();
+                if (btn.dataset.window === 'comment') initComment();
+                if (btn.dataset.window === 'timecapsule') initCapsule();
+            };
+        });
+
+        // ========== 3. 跑酷小游戏（Canvas） ==========
+        function initGame() {
+            const canvas = document.getElementById('game-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let running = true, score = 0, speed = 2, gravity = 0.6, jump = -8;
+            let player = { x: 40, y: 140, vy: 0, w: 20, h: 20 };
+            let obstacles = [];
+            function reset() {
+                score = 0; speed = 2;
+                player.y = 140; player.vy = 0;
+                obstacles = [{ x: 320, w: 20, h: 30 + Math.random() * 60 }];
+            }
+            reset();
+            function draw() {
+                ctx.clearRect(0, 0, 320, 180);
+                ctx.fillStyle = '#0ff';
+                ctx.fillRect(player.x, player.y, player.w, player.h);
+                ctx.fillStyle = '#fff';
+                for (const o of obstacles) ctx.fillRect(o.x, 160 - o.h, o.w, o.h);
+                ctx.fillStyle = '#0ff';
+                ctx.fillText('分数: ' + score, 10, 20);
+            }
+            function update() {
+                player.vy += gravity;
+                player.y += player.vy;
+                if (player.y > 140) { player.y = 140; player.vy = 0; }
+                for (const o of obstacles) o.x -= speed;
+                if (obstacles[0].x + obstacles[0].w < 0) {
+                    obstacles.shift();
+                    obstacles.push({ x: 320, w: 20, h: 30 + Math.random() * 60 });
+                    score++; speed = 2 + score * 0.1;
+                }
+                // 碰撞检测
+                for (const o of obstacles) {
+                    if (player.x < o.x + o.w && player.x + player.w > o.x && player.y + player.h > 160 - o.h) {
+                        running = false;
+                    }
+                }
+            }
+            function loop() {
+                if (!running) {
+                    ctx.fillStyle = '#f00';
+                    ctx.font = '20px sans-serif';
+                    ctx.fillText('游戏结束! 空格重开', 60, 90);
+                    return;
+                }
+                update();
+                draw();
+                requestAnimationFrame(loop);
+            }
+            document.addEventListener('keydown', function jumpHandler(e) {
+                if (e.code === 'Space') {
+                    if (!running) { running = true; reset(); loop(); return; }
+                    if (player.y >= 140) player.vy = jump;
+                }
+            });
+            loop();
+        }
+
+        // ========== 4. 电子足迹地图（Leaflet + GPX/GeoJSON 上传/持久化） ==========
+        function initMap() {
+            const mapDiv = document.getElementById('map');
+            if (!mapDiv) return;
+            const map = L.map(mapDiv).setView([31, 121], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            document.getElementById('gpx-upload').onchange = async e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const ext = file.name.split('.').pop().toLowerCase();
+                const text = await file.text();
+                const type = ext === 'gpx' ? 'gpx' : 'geojson';
+                const res = await window.callAPI('gpx', { name: file.name, file: text, type });
+                if (res.geojson) {
+                    L.geoJSON(res.geojson).addTo(map);
+                    alert('轨迹已上传并持久化！');
+                } else {
+                    alert('轨迹解析失败');
+                }
+            };
+        }
+
+        // ========== 5. 音乐播放器（MP3 上传/播放/频谱） ==========
+        function initMusic() {
+            const audio = document.getElementById('audio-player');
+            const upload = document.getElementById('mp3-upload');
+            const fftCanvas = document.getElementById('music-fft');
+            if (!audio || !upload || !fftCanvas) return;
+            upload.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                audio.src = URL.createObjectURL(file);
+                audio.load();
+                audio.play();
+            };
+            // 频谱
+            const ctx = fftCanvas.getContext('2d');
+            let audioCtx, analyser, source, dataArray;
+            audio.onplay = () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    source = audioCtx.createMediaElementSource(audio);
+                    analyser = audioCtx.createAnalyser();
+                    source.connect(analyser);
+                    analyser.connect(audioCtx.destination);
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+                }
+                function draw() {
+                    if (audio.paused) return;
+                    analyser.getByteFrequencyData(dataArray);
+                    ctx.clearRect(0, 0, fftCanvas.width, fftCanvas.height);
+                    ctx.fillStyle = '#0ff';
+                    for (let i = 0; i < 60; i++) {
+                        const v = dataArray[i];
+                        ctx.fillRect(i * 5, 60 - v / 4, 4, v / 4);
+                    }
+                    requestAnimationFrame(draw);
+                }
+                draw();
+            };
+        }
+
+        // ========== 6. 实时评论区（API交互） ==========
+        function initComment() {
+            const list = document.getElementById('comments-list');
+            const form = document.getElementById('comment-form');
+            if (!list || !form) return;
+            async function loadComments() {
+                const res = await window.callAPI('comment');
+                list.innerHTML = (res || []).map(c => `<div class="border-b border-cyan-900 py-1 flex justify-between items-center"><span class="text-cyan-300">${c.name}</span><span class="ml-2 flex-1">${c.content}</span><span class="text-xs text-gray-400 ml-2">${c.ts ? c.ts.slice(0, 16).replace('T', ' ') : ''}</span><button data-id="${c.id}" class="del-btn text-red-400 ml-2">删除</button></div>`).join('');
+                list.querySelectorAll('.del-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        await window.callAPI('comment', { id: btn.dataset.id }, 'DELETE');
+                        loadComments();
+                    };
+                });
+            }
+            form.onsubmit = async e => {
+                e.preventDefault();
+                const name = form.querySelector('#comment-name').value.trim();
+                const content = form.querySelector('#comment-content').value.trim();
+                if (!name || !content) return alert('请填写昵称和内容');
+                await window.callAPI('comment', { name, content });
+                form.reset();
+                loadComments();
+            };
+            loadComments();
+        }
+
+        // ========== 7. 时光邮局（API交互） ==========
+        function initCapsule() {
+            const form = document.getElementById('capsule-form');
+            const list = document.getElementById('capsule-list');
+            if (!form || !list) return;
+            async function loadCapsules() {
+                const res = await window.callAPI('timecapsule');
+                list.innerHTML = (res || []).map(c => `<div class="border-b border-cyan-900 py-1"><span class="text-cyan-300">${c.to_email}</span><span class="ml-2 flex-1">${c.content}</span><span class="text-xs text-gray-400 ml-2">${c.send_at ? c.send_at.replace('T', ' ').slice(0, 16) : ''}</span></div>`).join('');
+            }
+            form.onsubmit = async e => {
+                e.preventDefault();
+                const to_email = form.querySelector('#capsule-email').value.trim();
+                const send_at = form.querySelector('#capsule-date').value;
+                const content = form.querySelector('#capsule-content').value.trim();
+                if (!to_email || !send_at || !content) return alert('请填写完整');
+                await window.callAPI('timecapsule', { to_email, send_at, content });
+                form.reset();
+                loadCapsules();
+            };
+            loadCapsules();
+        }
     </script>
 </body>
 
