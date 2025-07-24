@@ -1,0 +1,96 @@
+<!--
+  index.html
+  用途：MyPlayGround 单页前端，包含所有小窗UI与功能模块。
+  技术：HTML5 + Tailwind CDN + 纯前端逻辑，所有API通过 window.callAPI 封装 fetch。
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyPlayGround</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            background: #18181b;
+            color: #fff;
+        }
+
+        .neon {
+            text-shadow: 0 0 8px #0ff, 0 0 16px #0ff, 0 0 32px #0ff;
+        }
+
+        .draggable {
+            cursor: move;
+        }
+
+        .window {
+            box-shadow: 0 0 16px #0ff4, 0 0 2px #0ff8;
+            border-radius: 0.75rem;
+            background: #23232b;
+        }
+
+        .window-header {
+            background: #0ff2;
+            border-bottom: 1px solid #0ff4;
+        }
+
+        .window-close {
+            color: #0ff;
+            cursor: pointer;
+        }
+
+        .window-close:hover {
+            color: #f00;
+        }
+
+        .resize-handle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 16px;
+            height: 16px;
+            cursor: se-resize;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-center">
+    <h1 class="text-4xl neon font-bold my-6">MyPlayGround</h1>
+    <div class="flex flex-wrap gap-4 justify-center">
+        <button class="window-btn bg-cyan-700 hover:bg-cyan-500 text-white px-4 py-2 rounded neon"
+            data-window="game">跑酷小游戏</button>
+        <button class="window-btn bg-cyan-700 hover:bg-cyan-500 text-white px-4 py-2 rounded neon"
+            data-window="map">电子足迹地图</button>
+        <button class="window-btn bg-cyan-700 hover:bg-cyan-500 text-white px-4 py-2 rounded neon"
+            data-window="music">音乐播放器</button>
+        <button class="window-btn bg-cyan-700 hover:bg-cyan-500 text-white px-4 py-2 rounded neon"
+            data-window="comment">实时评论区</button>
+        <button class="window-btn bg-cyan-700 hover:bg-cyan-500 text-white px-4 py-2 rounded neon"
+            data-window="timecapsule">时光邮局</button>
+    </div>
+    <!-- 小窗UI区域 -->
+    <div id="windows-root"></div>
+    <footer class="mt-10 text-cyan-400 text-xs">&copy; 2024 MyPlayGround | Powered by Vercel + Cloudflare D1</footer>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+    <script>
+        // ... 这里插入全部前端 JS 逻辑，包括：
+        // 1. window.callAPI 封装
+        // 2. 拖拽/缩放小窗
+        // 3. 跑酷小游戏（Canvas）
+        // 4. 电子足迹地图（Leaflet + GPX/GeoJSON 上传/持久化）
+        // 5. 音乐播放器（MP3 上传/播放/频谱）
+        // 6. 实时评论区（API交互）
+        // 7. 时光邮局（API交互）
+        // ...
+    </script>
+</body>
+
+</html>
