@@ -91,8 +91,16 @@
             } else {
                 options.method = method || 'GET';
             }
-            const res = await fetch(url, options);
-            return await res.json();
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }
+                return await res.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
         };
 
         // ========== 2. 拖拽/缩放小窗 ==========
@@ -210,22 +218,32 @@
         function initMap() {
             const mapDiv = document.getElementById('map');
             if (!mapDiv) return;
-            const map = L.map(mapDiv).setView([31, 121], 10);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-            document.getElementById('gpx-upload').onchange = async e => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const ext = file.name.split('.').pop().toLowerCase();
-                const text = await file.text();
-                const type = ext === 'gpx' ? 'gpx' : 'geojson';
-                const res = await window.callAPI('gpx', { name: file.name, file: text, type });
-                if (res.geojson) {
-                    L.geoJSON(res.geojson).addTo(map);
-                    alert('轨迹已上传并持久化！');
-                } else {
-                    alert('轨迹解析失败');
-                }
-            };
+            try {
+                const map = L.map(mapDiv).setView([31, 121], 10);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+                document.getElementById('gpx-upload').onchange = async e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    try {
+                        const text = await file.text();
+                        const type = ext === 'gpx' ? 'gpx' : 'geojson';
+                        const res = await window.callAPI('gpx', { name: file.name, file: text, type });
+                        if (res.geojson) {
+                            L.geoJSON(res.geojson).addTo(map);
+                            alert('轨迹已上传并持久化！');
+                        } else {
+                            alert('轨迹解析失败');
+                        }
+                    } catch (error) {
+                        console.error('Map upload error:', error);
+                        alert('上传失败，请检查文件格式');
+                    }
+                };
+            } catch (error) {
+                console.error('Map init error:', error);
+                mapDiv.innerHTML = '<p class="text-red-400">地图加载失败</p>';
+            }
         }
 
         // ========== 5. 音乐播放器（MP3 上传/播放/频谱） ==========
@@ -234,37 +252,55 @@
             const upload = document.getElementById('mp3-upload');
             const fftCanvas = document.getElementById('music-fft');
             if (!audio || !upload || !fftCanvas) return;
+
             upload.onchange = e => {
                 const file = e.target.files[0];
                 if (!file) return;
-                audio.src = URL.createObjectURL(file);
-                audio.load();
-                audio.play();
+                try {
+                    audio.src = URL.createObjectURL(file);
+                    audio.load();
+                    audio.play().catch(error => {
+                        console.error('Audio play error:', error);
+                        alert('音频播放失败，请检查文件格式');
+                    });
+                } catch (error) {
+                    console.error('Audio load error:', error);
+                    alert('音频加载失败');
+                }
             };
+
             // 频谱
             const ctx = fftCanvas.getContext('2d');
             let audioCtx, analyser, source, dataArray;
             audio.onplay = () => {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    source = audioCtx.createMediaElementSource(audio);
-                    analyser = audioCtx.createAnalyser();
-                    source.connect(analyser);
-                    analyser.connect(audioCtx.destination);
-                    dataArray = new Uint8Array(analyser.frequencyBinCount);
-                }
-                function draw() {
-                    if (audio.paused) return;
-                    analyser.getByteFrequencyData(dataArray);
-                    ctx.clearRect(0, 0, fftCanvas.width, fftCanvas.height);
-                    ctx.fillStyle = '#0ff';
-                    for (let i = 0; i < 60; i++) {
-                        const v = dataArray[i];
-                        ctx.fillRect(i * 5, 60 - v / 4, 4, v / 4);
+                try {
+                    if (!audioCtx) {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        source = audioCtx.createMediaElementSource(audio);
+                        analyser = audioCtx.createAnalyser();
+                        source.connect(analyser);
+                        analyser.connect(audioCtx.destination);
+                        dataArray = new Uint8Array(analyser.frequencyBinCount);
                     }
-                    requestAnimationFrame(draw);
+                    function draw() {
+                        if (audio.paused) return;
+                        try {
+                            analyser.getByteFrequencyData(dataArray);
+                            ctx.clearRect(0, 0, fftCanvas.width, fftCanvas.height);
+                            ctx.fillStyle = '#0ff';
+                            for (let i = 0; i < 60; i++) {
+                                const v = dataArray[i];
+                                ctx.fillRect(i * 5, 60 - v / 4, 4, v / 4);
+                            }
+                            requestAnimationFrame(draw);
+                        } catch (error) {
+                            console.error('FFT draw error:', error);
+                        }
+                    }
+                    draw();
+                } catch (error) {
+                    console.error('Audio context error:', error);
                 }
-                draw();
             };
         }
 
