@@ -1083,7 +1083,7 @@
             <div class="container">
                 <h2 class="section-title fade-in">游戏时间！</h2>
                 <div class="games-grid">
-                    <div class="game-card fade-in" onclick="window.open('survivor-game.html', '_blank')">
+                    <div class="game-card fade-in" onclick="openSurvivorGame()">
                         <div class="game-icon">🧛‍♂️</div>
                         <h4>暗夜幸存者</h4>
                         <p>在怪物潮中生存，获得升级！<br><small>🛠️ 开发调试版</small></p>
@@ -1333,6 +1333,34 @@
             
             const project = projects[projectId];
             showNotification(`${project.title}: ${project.description}`);
+        }
+
+        // 打开暗夜幸存者独立页面
+        function openSurvivorGame() {
+            console.log('正在打开暗夜幸存者游戏...');
+            
+            // 构建游戏页面URL
+            let gameUrl;
+            if (window.location.pathname.endsWith('/')) {
+                gameUrl = window.location.origin + window.location.pathname + 'survivor-game.html';
+            } else {
+                const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+                gameUrl = window.location.origin + basePath + 'survivor-game.html';
+            }
+            
+            console.log('游戏URL:', gameUrl);
+            
+            // 尝试多种方式打开
+            try {
+                const newWindow = window.open(gameUrl, '_blank', 'noopener,noreferrer');
+                if (!newWindow) {
+                    console.log('弹窗被阻止，尝试直接跳转...');
+                    window.location.href = gameUrl;
+                }
+            } catch (error) {
+                console.error('打开游戏页面失败:', error);
+                window.location.href = gameUrl;
+            }
         }
 
         // 游戏功能
