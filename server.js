@@ -67,8 +67,8 @@ global.fetch = async (url, options) => {
             const capsule = {
                 id: mockDb.nextId++,
                 to_email: body.params[0] || '',
-                content: body.params[1] || '',
-                send_at: body.params[2] || new Date().toISOString(),
+                send_at: body.params[1] || new Date().toISOString(),
+                content: body.params[2] || '',
                 created_at: new Date().toISOString()
             };
             mockDb.timecapsules.push(capsule);
