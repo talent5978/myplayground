@@ -640,11 +640,13 @@
 
         .modal-content {
             background: var(--card-bg);
-            margin: 5% auto;
-            padding: 2rem;
+            margin: 2% auto;
+            padding: 1.5rem;
             border-radius: 15px;
-            width: 90%;
-            max-width: 600px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 95vh;
+            overflow-y: auto;
             position: relative;
             animation: modalSlideIn 0.3s ease;
         }
@@ -671,6 +673,8 @@
             background: #001122;
             display: block;
             margin: 0 auto;
+            max-width: 100%;
+            height: auto;
         }
 
         .game-ui {
@@ -1452,12 +1456,67 @@
             weapons: [
                 {
                     name: '魔法飞弹',
-                    damage: 25,
-                    speed: 8,
-                    cooldown: 500,
+                    damage: 20,
+                    speed: 6,
+                    cooldown: 800,
                     lastFire: 0,
                     level: 1,
-                    range: 300
+                    range: 250,
+                    color: '#FFD700',
+                    type: 'projectile'
+                }
+            ],
+            
+            // 可解锁武器
+            availableWeapons: [
+                {
+                    name: '火球术',
+                    damage: 40,
+                    speed: 4,
+                    cooldown: 1500,
+                    range: 200,
+                    color: '#FF4500',
+                    type: 'projectile',
+                    effect: 'explosion'
+                },
+                {
+                    name: '冰霜箭',
+                    damage: 15,
+                    speed: 8,
+                    cooldown: 600,
+                    range: 300,
+                    color: '#87CEEB',
+                    type: 'projectile',
+                    effect: 'slow'
+                },
+                {
+                    name: '雷电链',
+                    damage: 30,
+                    speed: 0,
+                    cooldown: 2000,
+                    range: 150,
+                    color: '#FFFF00',
+                    type: 'chain',
+                    chainCount: 3
+                },
+                {
+                    name: '旋转刀刃',
+                    damage: 25,
+                    speed: 5,
+                    cooldown: 100,
+                    range: 80,
+                    color: '#C0C0C0',
+                    type: 'orbit'
+                },
+                {
+                    name: '治疗光环',
+                    damage: 0,
+                    speed: 0,
+                    cooldown: 3000,
+                    range: 100,
+                    color: '#90EE90',
+                    type: 'heal',
+                    healAmount: 30
                 }
             ],
             
@@ -1492,52 +1551,115 @@
                 }
             ],
             
-            // 升级选项
-            upgrades: [
-                {
-                    name: '增加伤害',
-                    description: '武器伤害 +20%',
-                    apply: () => {
-                        survivorGame.weapons.forEach(w => w.damage *= 1.2);
-                    }
-                },
-                {
-                    name: '提升攻速',
-                    description: '攻击速度 +25%',
-                    apply: () => {
-                        survivorGame.weapons.forEach(w => w.cooldown *= 0.75);
-                    }
-                },
-                {
-                    name: '增加血量',
-                    description: '最大血量 +25',
-                    apply: () => {
-                        survivorGame.player.maxHealth += 25;
-                        survivorGame.player.health = survivorGame.player.maxHealth;
-                    }
-                },
-                {
-                    name: '移动加速',
-                    description: '移动速度 +20%',
-                    apply: () => {
-                        survivorGame.player.speed *= 1.2;
-                    }
-                },
-                {
-                    name: '射程延长',
-                    description: '武器射程 +30%',
-                    apply: () => {
-                        survivorGame.weapons.forEach(w => w.range *= 1.3);
-                    }
-                },
-                {
-                    name: '生命恢复',
-                    description: '每秒恢复 2 点生命值',
-                    apply: () => {
-                        survivorGame.hasHealthRegen = true;
-                    }
-                }
-            ]
+                         // 升级选项
+             upgrades: [
+                 {
+                     name: '增加伤害',
+                     description: '武器伤害 +25%',
+                     apply: () => {
+                         survivorGame.weapons.forEach(w => w.damage = Math.floor(w.damage * 1.25));
+                     }
+                 },
+                 {
+                     name: '提升攻速',
+                     description: '攻击速度 +30%',
+                     apply: () => {
+                         survivorGame.weapons.forEach(w => w.cooldown = Math.floor(w.cooldown * 0.7));
+                     }
+                 },
+                 {
+                     name: '增加血量',
+                     description: '最大血量 +30',
+                     apply: () => {
+                         survivorGame.player.maxHealth += 30;
+                         survivorGame.player.health = survivorGame.player.maxHealth;
+                     }
+                 },
+                 {
+                     name: '移动加速',
+                     description: '移动速度 +25%',
+                     apply: () => {
+                         survivorGame.player.speed *= 1.25;
+                     }
+                 },
+                 {
+                     name: '射程延长',
+                     description: '武器射程 +40%',
+                     apply: () => {
+                         survivorGame.weapons.forEach(w => w.range = Math.floor(w.range * 1.4));
+                     }
+                 },
+                 {
+                     name: '生命恢复',
+                     description: '每秒恢复 3 点生命值',
+                     apply: () => {
+                         survivorGame.hasHealthRegen = true;
+                         survivorGame.healthRegenRate = (survivorGame.healthRegenRate || 0) + 3;
+                     }
+                 },
+                 {
+                     name: '获得新武器: 火球术',
+                     description: '解锁火球术，造成爆炸伤害',
+                     condition: () => !survivorGame.weapons.find(w => w.name === '火球术'),
+                     apply: () => {
+                         const fireball = {...survivorGame.availableWeapons.find(w => w.name === '火球术')};
+                         fireball.lastFire = 0;
+                         survivorGame.weapons.push(fireball);
+                     }
+                 },
+                 {
+                     name: '获得新武器: 冰霜箭',
+                     description: '解锁冰霜箭，减缓敌人速度',
+                     condition: () => !survivorGame.weapons.find(w => w.name === '冰霜箭'),
+                     apply: () => {
+                         const frostArrow = {...survivorGame.availableWeapons.find(w => w.name === '冰霜箭')};
+                         frostArrow.lastFire = 0;
+                         survivorGame.weapons.push(frostArrow);
+                     }
+                 },
+                 {
+                     name: '获得新武器: 雷电链',
+                     description: '解锁雷电链，可连锁攻击',
+                     condition: () => !survivorGame.weapons.find(w => w.name === '雷电链'),
+                     apply: () => {
+                         const lightning = {...survivorGame.availableWeapons.find(w => w.name === '雷电链')};
+                         lightning.lastFire = 0;
+                         survivorGame.weapons.push(lightning);
+                     }
+                 },
+                 {
+                     name: '获得新武器: 旋转刀刃',
+                     description: '解锁旋转刀刃，围绕角色旋转',
+                     condition: () => !survivorGame.weapons.find(w => w.name === '旋转刀刃'),
+                     apply: () => {
+                         const blade = {...survivorGame.availableWeapons.find(w => w.name === '旋转刀刃')};
+                         blade.lastFire = 0;
+                         blade.angle = 0;
+                         survivorGame.weapons.push(blade);
+                     }
+                 },
+                 {
+                     name: '获得新武器: 治疗光环',
+                     description: '解锁治疗光环，定期恢复生命',
+                     condition: () => !survivorGame.weapons.find(w => w.name === '治疗光环'),
+                     apply: () => {
+                         const heal = {...survivorGame.availableWeapons.find(w => w.name === '治疗光环')};
+                         heal.lastFire = 0;
+                         survivorGame.weapons.push(heal);
+                     }
+                 },
+                 {
+                     name: '武器进化',
+                     description: '随机升级一个武器',
+                     condition: () => survivorGame.weapons.length > 1,
+                     apply: () => {
+                         const weapon = survivorGame.weapons[Math.floor(Math.random() * survivorGame.weapons.length)];
+                         weapon.damage = Math.floor(weapon.damage * 1.5);
+                         weapon.range = Math.floor(weapon.range * 1.2);
+                         if (weapon.cooldown > 100) weapon.cooldown = Math.floor(weapon.cooldown * 0.8);
+                     }
+                 }
+             ]
         };
 
         function initSurvivorGame() {
@@ -1583,18 +1705,20 @@
             survivorGame.pickups = [];
             survivorGame.hasHealthRegen = false;
             
-            // 重置武器
-            survivorGame.weapons = [
-                {
-                    name: '魔法飞弹',
-                    damage: 25,
-                    speed: 8,
-                    cooldown: 500,
-                    lastFire: 0,
-                    level: 1,
-                    range: 300
-                }
-            ];
+                         // 重置武器
+             survivorGame.weapons = [
+                 {
+                     name: '魔法飞弹',
+                     damage: 20,
+                     speed: 6,
+                     cooldown: 800,
+                     lastFire: 0,
+                     level: 1,
+                     range: 250,
+                     color: '#FFD700',
+                     type: 'projectile'
+                 }
+             ];
             
             gameLoop();
         }
@@ -1650,13 +1774,14 @@
             // 检查碰撞
             checkCollisions();
             
-            // 生命恢复
-            if (survivorGame.hasHealthRegen) {
-                survivorGame.player.health = Math.min(
-                    survivorGame.player.maxHealth,
-                    survivorGame.player.health + deltaTime * 0.002
-                );
-            }
+                         // 生命恢复
+             if (survivorGame.hasHealthRegen) {
+                 const regenRate = survivorGame.healthRegenRate || 2;
+                 survivorGame.player.health = Math.min(
+                     survivorGame.player.maxHealth,
+                     survivorGame.player.health + deltaTime * 0.001 * regenRate
+                 );
+             }
             
             // 检查游戏结束
             if (survivorGame.player.health <= 0) {
@@ -1682,12 +1807,12 @@
             }
         }
 
-        function spawnEnemies() {
-            // 根据时间增加敌人生成频率
-            const gameTime = (Date.now() - survivorGame.startTime) / 1000;
-            const spawnRate = Math.min(0.02 + gameTime * 0.001, 0.1);
-            
-            if (Math.random() < spawnRate) {
+                 function spawnEnemies() {
+             // 根据时间增加敌人生成频率，但更平缓
+             const gameTime = (Date.now() - survivorGame.startTime) / 1000;
+             const spawnRate = Math.min(0.008 + gameTime * 0.0003, 0.04);
+             
+             if (Math.random() < spawnRate) {
                 const side = Math.floor(Math.random() * 4);
                 let x, y;
                 
@@ -1723,17 +1848,23 @@
             }
         }
 
-        function updateEnemies(deltaTime) {
-            survivorGame.enemies.forEach((enemy, index) => {
-                // 移动向玩家
-                const dx = survivorGame.player.x - enemy.x;
-                const dy = survivorGame.player.y - enemy.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance > 0) {
-                    enemy.x += (dx / distance) * enemy.speed;
-                    enemy.y += (dy / distance) * enemy.speed;
-                }
+                 function updateEnemies(deltaTime) {
+             survivorGame.enemies.forEach((enemy, index) => {
+                 // 处理减速效果
+                 if (enemy.slowEffect > 0) {
+                     enemy.slowEffect -= deltaTime;
+                 }
+                 
+                 // 移动向玩家
+                 const dx = survivorGame.player.x - enemy.x;
+                 const dy = survivorGame.player.y - enemy.y;
+                 const distance = Math.sqrt(dx * dx + dy * dy);
+                 
+                 if (distance > 0) {
+                     const speedModifier = enemy.slowEffect > 0 ? 0.3 : 1;
+                     enemy.x += (dx / distance) * enemy.speed * speedModifier;
+                     enemy.y += (dy / distance) * enemy.speed * speedModifier;
+                 }
                 
                 // 攻击玩家
                 if (distance < enemy.radius + survivorGame.player.radius + 5) {
@@ -1757,48 +1888,178 @@
             });
         }
 
-        function updateWeapons(deltaTime) {
-            const now = Date.now();
-            
-            survivorGame.weapons.forEach(weapon => {
-                if (now - weapon.lastFire > weapon.cooldown) {
-                    // 寻找最近的敌人
-                    let closestEnemy = null;
-                    let closestDistance = weapon.range;
-                    
-                    survivorGame.enemies.forEach(enemy => {
-                        const dx = enemy.x - survivorGame.player.x;
-                        const dy = enemy.y - survivorGame.player.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        if (distance < closestDistance) {
-                            closestEnemy = enemy;
-                            closestDistance = distance;
-                        }
-                    });
-                    
-                    if (closestEnemy) {
-                        // 发射子弹
-                        const dx = closestEnemy.x - survivorGame.player.x;
-                        const dy = closestEnemy.y - survivorGame.player.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        survivorGame.projectiles.push({
-                            x: survivorGame.player.x,
-                            y: survivorGame.player.y,
-                            vx: (dx / distance) * weapon.speed,
-                            vy: (dy / distance) * weapon.speed,
-                            damage: weapon.damage,
-                            radius: 4,
-                            color: '#FFD700',
-                            life: 1000
-                        });
-                        
-                        weapon.lastFire = now;
-                    }
-                }
-            });
-        }
+                 function updateWeapons(deltaTime) {
+             const now = Date.now();
+             
+             survivorGame.weapons.forEach(weapon => {
+                 if (weapon.type === 'orbit') {
+                     // 旋转刀刃特殊处理
+                     weapon.angle = (weapon.angle || 0) + 0.1;
+                     const orbitX = survivorGame.player.x + Math.cos(weapon.angle) * weapon.range;
+                     const orbitY = survivorGame.player.y + Math.sin(weapon.angle) * weapon.range;
+                     
+                     // 检查是否击中敌人
+                     survivorGame.enemies.forEach((enemy, index) => {
+                         const dx = orbitX - enemy.x;
+                         const dy = orbitY - enemy.y;
+                         const distance = Math.sqrt(dx * dx + dy * dy);
+                         
+                         if (distance < 15 && now - weapon.lastFire > weapon.cooldown) {
+                             enemy.health -= weapon.damage;
+                             createParticles(enemy.x, enemy.y, weapon.color);
+                             weapon.lastFire = now;
+                             
+                             if (enemy.health <= 0) {
+                                 survivorGame.kills++;
+                                 survivorGame.score += enemy.exp * 10;
+                                 createExpPickup(enemy.x, enemy.y, enemy.exp);
+                                 survivorGame.enemies.splice(index, 1);
+                             }
+                         }
+                     });
+                     return;
+                 }
+                 
+                 if (now - weapon.lastFire > weapon.cooldown) {
+                     if (weapon.type === 'heal') {
+                         // 治疗光环
+                         survivorGame.player.health = Math.min(
+                             survivorGame.player.maxHealth,
+                             survivorGame.player.health + weapon.healAmount
+                         );
+                         createParticles(survivorGame.player.x, survivorGame.player.y, weapon.color);
+                         weapon.lastFire = now;
+                         return;
+                     }
+                     
+                     if (weapon.type === 'chain') {
+                         // 雷电链
+                         let currentTarget = null;
+                         let closestDistance = weapon.range;
+                         
+                         survivorGame.enemies.forEach(enemy => {
+                             const dx = enemy.x - survivorGame.player.x;
+                             const dy = enemy.y - survivorGame.player.y;
+                             const distance = Math.sqrt(dx * dx + dy * dy);
+                             
+                             if (distance < closestDistance) {
+                                 currentTarget = enemy;
+                                 closestDistance = distance;
+                             }
+                         });
+                         
+                         if (currentTarget) {
+                             const chainTargets = [currentTarget];
+                             let lastTarget = currentTarget;
+                             
+                             // 寻找连锁目标
+                             for (let i = 1; i < weapon.chainCount; i++) {
+                                 let nextTarget = null;
+                                 let nextDistance = weapon.range;
+                                 
+                                 survivorGame.enemies.forEach(enemy => {
+                                     if (chainTargets.includes(enemy)) return;
+                                     
+                                     const dx = enemy.x - lastTarget.x;
+                                     const dy = enemy.y - lastTarget.y;
+                                     const distance = Math.sqrt(dx * dx + dy * dy);
+                                     
+                                     if (distance < nextDistance) {
+                                         nextTarget = enemy;
+                                         nextDistance = distance;
+                                     }
+                                 });
+                                 
+                                 if (nextTarget) {
+                                     chainTargets.push(nextTarget);
+                                     lastTarget = nextTarget;
+                                 }
+                             }
+                             
+                             // 对所有连锁目标造成伤害
+                             chainTargets.forEach((target, index) => {
+                                 setTimeout(() => {
+                                     target.health -= weapon.damage;
+                                     createParticles(target.x, target.y, weapon.color);
+                                     
+                                     if (target.health <= 0) {
+                                         survivorGame.kills++;
+                                         survivorGame.score += target.exp * 10;
+                                         createExpPickup(target.x, target.y, target.exp);
+                                         const enemyIndex = survivorGame.enemies.indexOf(target);
+                                         if (enemyIndex > -1) survivorGame.enemies.splice(enemyIndex, 1);
+                                     }
+                                 }, index * 100);
+                             });
+                             
+                             weapon.lastFire = now;
+                         }
+                         return;
+                     }
+                     
+                     // 常规投射物武器
+                     let closestEnemy = null;
+                     let closestDistance = weapon.range;
+                     
+                     survivorGame.enemies.forEach(enemy => {
+                         const dx = enemy.x - survivorGame.player.x;
+                         const dy = enemy.y - survivorGame.player.y;
+                         const distance = Math.sqrt(dx * dx + dy * dy);
+                         
+                         if (distance < closestDistance) {
+                             closestEnemy = enemy;
+                             closestDistance = distance;
+                         }
+                     });
+                     
+                     if (closestEnemy) {
+                         const dx = closestEnemy.x - survivorGame.player.x;
+                         const dy = closestEnemy.y - survivorGame.player.y;
+                         const distance = Math.sqrt(dx * dx + dy * dy);
+                         
+                         survivorGame.projectiles.push({
+                             x: survivorGame.player.x,
+                             y: survivorGame.player.y,
+                             vx: (dx / distance) * weapon.speed,
+                             vy: (dy / distance) * weapon.speed,
+                             damage: weapon.damage,
+                             radius: weapon.name === '火球术' ? 8 : 4,
+                             color: weapon.color,
+                             life: 1500,
+                             effect: weapon.effect,
+                             weaponName: weapon.name
+                         });
+                         
+                         weapon.lastFire = now;
+                     }
+                 }
+             });
+         }
+         
+         function createExpPickup(x, y, exp) {
+             survivorGame.pickups.push({
+                 x: x,
+                 y: y,
+                 radius: 6,
+                 type: 'exp',
+                 value: exp,
+                 color: '#00FF00',
+                 life: 10000
+             });
+             
+             // 随机掉落血包
+             if (Math.random() < 0.15) {
+                 survivorGame.pickups.push({
+                     x: x + Math.random() * 20 - 10,
+                     y: y + Math.random() * 20 - 10,
+                     radius: 8,
+                     type: 'health',
+                     value: 25,
+                     color: '#FF0000',
+                     life: 15000
+                 });
+             }
+         }
 
         function updateProjectiles(deltaTime) {
             survivorGame.projectiles.forEach((projectile, index) => {
@@ -1880,37 +2141,36 @@
                         // 移除子弹
                         survivorGame.projectiles.splice(pIndex, 1);
                         
-                        // 敌人死亡
-                        if (enemy.health <= 0) {
-                            survivorGame.kills++;
-                            survivorGame.score += enemy.exp * 10;
-                            
-                            // 掉落经验
-                            survivorGame.pickups.push({
-                                x: enemy.x,
-                                y: enemy.y,
-                                radius: 6,
-                                type: 'exp',
-                                value: enemy.exp,
-                                color: '#00FF00',
-                                life: 10000
-                            });
-                            
-                            // 随机掉落血包
-                            if (Math.random() < 0.1) {
-                                survivorGame.pickups.push({
-                                    x: enemy.x + Math.random() * 20 - 10,
-                                    y: enemy.y + Math.random() * 20 - 10,
-                                    radius: 8,
-                                    type: 'health',
-                                    value: 20,
-                                    color: '#FF0000',
-                                    life: 15000
-                                });
-                            }
-                            
-                            survivorGame.enemies.splice(eIndex, 1);
-                        }
+                                                 // 敌人死亡
+                         if (enemy.health <= 0) {
+                             survivorGame.kills++;
+                             survivorGame.score += enemy.exp * 10;
+                             
+                             // 爆炸效果（火球术）
+                             if (projectile.effect === 'explosion') {
+                                 survivorGame.enemies.forEach(nearbyEnemy => {
+                                     const dx = nearbyEnemy.x - enemy.x;
+                                     const dy = nearbyEnemy.y - enemy.y;
+                                     const distance = Math.sqrt(dx * dx + dy * dy);
+                                     
+                                     if (distance < 50 && nearbyEnemy !== enemy) {
+                                         nearbyEnemy.health -= projectile.damage * 0.5;
+                                         createParticles(nearbyEnemy.x, nearbyEnemy.y, '#FF4500');
+                                     }
+                                 });
+                             }
+                             
+                             // 减速效果（冰霜箭）
+                             if (projectile.effect === 'slow') {
+                                 enemy.slowEffect = 3000; // 3秒减速
+                             }
+                             
+                             createExpPickup(enemy.x, enemy.y, enemy.exp);
+                             survivorGame.enemies.splice(eIndex, 1);
+                         } else if (projectile.effect === 'slow') {
+                             // 即使没死也会被减速
+                             enemy.slowEffect = 2000;
+                         }
                     }
                 });
             });
@@ -1943,19 +2203,24 @@
             }
         }
 
-        function showUpgradePanel() {
-            survivorGame.paused = true;
-            const panel = document.getElementById('upgradePanel');
-            const options = document.getElementById('upgradeOptions');
-            
-            // 随机选择3个升级选项
-            const availableUpgrades = [...survivorGame.upgrades];
-            const selectedUpgrades = [];
-            
-            for (let i = 0; i < Math.min(3, availableUpgrades.length); i++) {
-                const randomIndex = Math.floor(Math.random() * availableUpgrades.length);
-                selectedUpgrades.push(availableUpgrades.splice(randomIndex, 1)[0]);
-            }
+                 function showUpgradePanel() {
+             survivorGame.paused = true;
+             const panel = document.getElementById('upgradePanel');
+             const options = document.getElementById('upgradeOptions');
+             
+             // 过滤可用的升级选项
+             const availableUpgrades = survivorGame.upgrades.filter(upgrade => 
+                 !upgrade.condition || upgrade.condition()
+             );
+             
+             // 随机选择3个升级选项
+             const selectedUpgrades = [];
+             const upgradesCopy = [...availableUpgrades];
+             
+             for (let i = 0; i < Math.min(3, upgradesCopy.length); i++) {
+                 const randomIndex = Math.floor(Math.random() * upgradesCopy.length);
+                 selectedUpgrades.push(upgradesCopy.splice(randomIndex, 1)[0]);
+             }
             
             options.innerHTML = '';
             selectedUpgrades.forEach((upgrade, index) => {
@@ -2011,27 +2276,52 @@
                 ctx.shadowBlur = 0;
             });
             
-            // 绘制敌人
-            survivorGame.enemies.forEach(enemy => {
-                ctx.fillStyle = enemy.color;
-                ctx.beginPath();
-                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 血条
-                if (enemy.health < enemy.maxHealth) {
-                    const barWidth = enemy.radius * 2;
-                    const barHeight = 4;
-                    const barX = enemy.x - barWidth / 2;
-                    const barY = enemy.y - enemy.radius - 10;
-                    
-                    ctx.fillStyle = '#333';
-                    ctx.fillRect(barX, barY, barWidth, barHeight);
-                    
-                    ctx.fillStyle = '#FF0000';
-                    ctx.fillRect(barX, barY, (enemy.health / enemy.maxHealth) * barWidth, barHeight);
-                }
-            });
+                         // 绘制敌人
+             survivorGame.enemies.forEach(enemy => {
+                 ctx.fillStyle = enemy.slowEffect > 0 ? '#87CEEB' : enemy.color;
+                 ctx.beginPath();
+                 ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                 ctx.fill();
+                 
+                 // 减速效果视觉提示
+                 if (enemy.slowEffect > 0) {
+                     ctx.strokeStyle = '#87CEEB';
+                     ctx.lineWidth = 2;
+                     ctx.beginPath();
+                     ctx.arc(enemy.x, enemy.y, enemy.radius + 3, 0, Math.PI * 2);
+                     ctx.stroke();
+                 }
+                 
+                 // 血条
+                 if (enemy.health < enemy.maxHealth) {
+                     const barWidth = enemy.radius * 2;
+                     const barHeight = 4;
+                     const barX = enemy.x - barWidth / 2;
+                     const barY = enemy.y - enemy.radius - 10;
+                     
+                     ctx.fillStyle = '#333';
+                     ctx.fillRect(barX, barY, barWidth, barHeight);
+                     
+                     ctx.fillStyle = '#FF0000';
+                     ctx.fillRect(barX, barY, (enemy.health / enemy.maxHealth) * barWidth, barHeight);
+                 }
+             });
+             
+             // 绘制旋转刀刃
+             survivorGame.weapons.forEach(weapon => {
+                 if (weapon.type === 'orbit') {
+                     const orbitX = survivorGame.player.x + Math.cos(weapon.angle || 0) * weapon.range;
+                     const orbitY = survivorGame.player.y + Math.sin(weapon.angle || 0) * weapon.range;
+                     
+                     ctx.fillStyle = weapon.color;
+                     ctx.shadowColor = weapon.color;
+                     ctx.shadowBlur = 10;
+                     ctx.beginPath();
+                     ctx.arc(orbitX, orbitY, 8, 0, Math.PI * 2);
+                     ctx.fill();
+                     ctx.shadowBlur = 0;
+                 }
+             });
             
             // 绘制子弹
             survivorGame.projectiles.forEach(projectile => {
