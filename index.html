@@ -922,7 +922,7 @@
         <i class="fas fa-music"></i>
     </button>
     <audio id="bgMusic" loop>
-        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
+        <!-- 音频文件已移除，避免网络请求超时 -->
     </audio>
 
     <!-- 导航栏 -->
@@ -1257,14 +1257,29 @@
             const music = document.getElementById('bgMusic');
             const musicToggle = document.getElementById('musicToggle');
             
-            if (music.paused) {
-                music.play();
-                musicToggle.classList.add('playing');
-                musicToggle.innerHTML = '<i class="fas fa-pause"></i>';
-            } else {
-                music.pause();
-                musicToggle.classList.remove('playing');
-                musicToggle.innerHTML = '<i class="fas fa-music"></i>';
+            // 检查是否有音频源
+            if (!music.src && music.children.length === 0) {
+                showNotification('暂未配置背景音乐文件');
+                return;
+            }
+            
+            try {
+                if (music.paused) {
+                    music.play().then(() => {
+                        musicToggle.classList.add('playing');
+                        musicToggle.innerHTML = '<i class="fas fa-pause"></i>';
+                    }).catch(error => {
+                        console.log('音频播放失败:', error);
+                        showNotification('音频播放失败');
+                    });
+                } else {
+                    music.pause();
+                    musicToggle.classList.remove('playing');
+                    musicToggle.innerHTML = '<i class="fas fa-music"></i>';
+                }
+            } catch (error) {
+                console.log('音乐控制出错:', error);
+                showNotification('音乐功能暂不可用');
             }
         }
 
