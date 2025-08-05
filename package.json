@@ -2,9 +2,10 @@
     "name": "myplayground",
     "version": "1.0.0",
     "main": "index.js",
-    "type": "module",
     "dependencies": {
-        "express": "^5.1.0",
         "nodemailer": "^6.9.8"
+    },
+    "devDependencies": {
+        "express": "^5.1.0"
     }
 }

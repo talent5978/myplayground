@@ -1,11 +1,6 @@
-import express from 'express';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-// ES6 模块中获取 __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
 // 设置环境变量
 process.env.DATABASE_URL = 'http://localhost:mock-db';
@@ -103,8 +98,9 @@ app.all('/api/:route', async (req, res) => {
             return res.status(404).json({ error: 'API endpoint not found' });
         }
         
-        // 动态导入API模块 (ES6 modules)
-        const apiModule = await import(`file://${apiPath}`);
+        // 动态导入API模块 (CommonJS)
+        delete require.cache[require.resolve(apiPath)];
+        const apiModule = require(apiPath);
         
         // 创建模拟的Vercel请求和响应对象
         const mockReq = {
@@ -138,10 +134,10 @@ app.all('/api/:route', async (req, res) => {
         };
         
         // 执行API函数
-        if (typeof apiModule.default === 'function') {
-            await apiModule.default(mockReq, mockRes);
+        if (typeof apiModule === 'function') {
+            await apiModule(mockReq, mockRes);
         } else {
-            res.status(500).json({ error: 'Invalid API module - no default export' });
+            res.status(500).json({ error: 'Invalid API module - no function export' });
         }
         
     } catch (error) {

@@ -2,9 +2,9 @@
 // api/cron_send.js
 // 用途：定时邮件钩子，每日由GitHub Action触发，发送到期的时光邮局信件
 //
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

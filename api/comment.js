@@ -2,7 +2,7 @@
 // api/comment.js
 // 用途：评论区CRUD接口，操作Cloudflare D1（SQLite）
 //
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

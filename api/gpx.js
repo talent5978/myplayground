@@ -2,7 +2,7 @@
 // api/gpx.js
 // 用途：上传GPX/GeoJSON，返回标准GeoJSON并持久化，Cloudflare D1（SQLite）
 //
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
