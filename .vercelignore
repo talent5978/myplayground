@@ -1,6 +1,0 @@
-server.js
-start.sh
-test-api.sh
-node_modules
-*.log
-.env.local

@@ -1,83 +1,63 @@
-# MyPlayGround
+# 我的个人网站
 
-> 你的全能小站，支持跑酷小游戏、电子足迹地图、音乐播放器、评论区、时光邮局。
+一个简洁、现代、响应式的个人网站。
 
-## 本地开发
+## ✨ 特性
 
-### 快速启动
-```bash
-# 使用启动脚本（推荐）
-./start.sh
+- 🎨 现代化设计，渐变背景
+- 📱 完全响应式，适配所有设备
+- ⚡ 快速加载，纯HTML/CSS/JS
+- 🎭 平滑动画和交互效果
+- 🔗 社交媒体链接集成
 
-# 或手动启动
-npm install
-node server.js
-```
+## 🚀 快速开始
 
-然后访问 http://localhost:3000
+1. **本地预览**：
+   直接在浏览器中打开 `index.html` 文件
 
-### 本地开发说明
-- 使用内存数据库模拟 Cloudflare D1
-- 所有数据在服务器重启后会丢失
-- API端点完全兼容生产环境
+2. **部署到Vercel**：
+   - 推送代码到GitHub
+   - 在Vercel中导入项目
+   - 一键部署完成
 
-## 线上部署
+## 📝 自定义
 
-1. **推送代码到 GitHub 仓库**
-2. **Vercel 导入 GitHub 仓库**
-   - 配置环境变量：
-     - `DATABASE_URL` 你的 Cloudflare D1 绑定
-     - `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` 发件邮箱
-     - `ADMIN_EMAIL` 站长收信地址
-3. **Cloudflare D1 控制台执行 /db/schema.sql 初始化表结构**
-   - 可选：/db/seed.sql 导入示例数据
-4. **访问 Vercel 部署地址，网站上线！**
+### 修改个人信息
+编辑 `index.html` 文件中的以下内容：
 
-## 目录结构
+- **标题和描述**：修改 `<title>` 和英雄区域的文本
+- **关于我**：更新关于我部分的内容
+- **技能**：修改技能卡片的内容
+- **联系方式**：更新联系链接的URL
 
-- `/index.html`         前端单页（所有功能小窗）
-- `/api/*.js`           Vercel Serverless API（评论、时光邮局、GPX轨迹、定时邮件）
-- `/db/schema.sql`      Cloudflare D1 初始化表
-- `/db/seed.sql`        示例数据
-- `/vercel.json`        路由与构建配置
-- `/package.json`       依赖声明
+### 修改样式
+所有样式都在 `<style>` 标签中，您可以：
+- 更改颜色主题
+- 调整字体和大小
+- 修改动画效果
+- 自定义布局
 
-## 主要功能
+## 🎨 颜色主题
 
-- 跑酷小游戏（Canvas，随分数加速）
-- 电子足迹地图（Leaflet，支持GPX/GeoJSON上传）
-- 音乐播放器（MP3上传/频谱）
-- 实时评论区（D1持久化）
-- 时光邮局（未来邮件，定时发送）
+主要颜色：
+- 主色调：`#667eea` (蓝紫色)
+- 辅助色：`#764ba2` (深紫色)
+- 强调色：`#FFD700` (金色)
 
-## API 说明
+## 📱 响应式设计
 
-- `/api/comment` 评论区 CRUD
-- `/api/timecapsule` 时光邮局（写信/查信）
-- `/api/gpx` 上传轨迹（GPX/GeoJSON）
-- `/api/cron_send` 定时邮件钩子（每日触发）
+网站在以下设备上都能完美显示：
+- 桌面电脑 (1200px+)
+- 平板电脑 (768px - 1200px)
+- 手机 (< 768px)
 
-## 环境变量
+## 🔧 技术栈
 
-- `DATABASE_URL`   Cloudflare D1 绑定
-- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` 邮箱配置
-- `ADMIN_EMAIL`    站长收信地址
+- HTML5
+- CSS3 (Grid, Flexbox, 动画)
+- Vanilla JavaScript
+- Font Awesome 图标
 
-## 触发定时邮件
+## 📄 许可证
 
-建议用 GitHub Actions 定时请求 `/api/cron_send`，如：
-
-```yaml
-# .github/workflows/cron-send.yml
-name: Cron Send Timecapsule
-on:
-  schedule:
-    - cron: '0 2 * * *'
-jobs:
-  send:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Curl send
-        run: |
-          curl -X POST ${{ secrets.VERCEL_URL }}/api/cron_send
-``` 
+MIT License - 随意使用和修改！
