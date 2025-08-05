@@ -3,9 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人网站</title>
+    <title>我的个人网站 - 有趣的数字空间</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #FFD700;
+            --text-color: #333;
+            --bg-color: #fff;
+            --card-bg: #fff;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #8B5CF6;
+            --secondary-color: #EC4899;
+            --accent-color: #F59E0B;
+            --text-color: #E5E7EB;
+            --bg-color: #111827;
+            --card-bg: #1F2937;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -15,15 +35,42 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             min-height: 100vh;
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* 粒子背景 */
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            position: relative;
+            z-index: 10;
         }
 
         /* 导航栏 */
@@ -34,7 +81,12 @@
             top: 0;
             width: 100%;
             z-index: 1000;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 20px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] nav {
+            background: rgba(31, 41, 55, 0.95);
         }
 
         nav .container {
@@ -47,24 +99,77 @@
         .logo {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #667eea;
+            color: var(--primary-color);
+            cursor: pointer;
         }
 
         .nav-links {
             display: flex;
             list-style: none;
             gap: 2rem;
+            align-items: center;
         }
 
         .nav-links a {
             text-decoration: none;
-            color: #333;
+            color: var(--text-color);
             font-weight: 500;
             transition: color 0.3s ease;
         }
 
         .nav-links a:hover {
-            color: #667eea;
+            color: var(--primary-color);
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            background: none;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* 音乐控制 */
+        .music-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .music-control:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+
+        .music-control.playing {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
         }
 
         /* 主要内容区域 */
@@ -77,6 +182,7 @@
             text-align: center;
             padding: 100px 0;
             color: white;
+            position: relative;
         }
 
         .hero h1 {
@@ -85,10 +191,31 @@
             animation: fadeInUp 1s ease;
         }
 
-        .hero p {
+        .typewriter {
             font-size: 1.2rem;
             margin-bottom: 2rem;
-            animation: fadeInUp 1s ease 0.2s both;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .typewriter-text {
+            border-right: 2px solid var(--accent-color);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { border-color: var(--accent-color); }
+            51%, 100% { border-color: transparent; }
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s ease 0.4s both;
         }
 
         .cta-button {
@@ -101,18 +228,28 @@
             border: 2px solid white;
             font-weight: 600;
             transition: all 0.3s ease;
-            animation: fadeInUp 1s ease 0.4s both;
         }
 
         .cta-button:hover {
             background: white;
-            color: #667eea;
+            color: var(--primary-color);
             transform: translateY(-2px);
+        }
+
+        .cta-button.secondary {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #333;
+        }
+
+        .cta-button.secondary:hover {
+            background: transparent;
+            color: var(--accent-color);
         }
 
         /* 关于我区域 */
         .about {
-            background: white;
+            background: var(--bg-color);
             padding: 80px 0;
         }
 
@@ -120,7 +257,7 @@
             text-align: center;
             font-size: 2.5rem;
             margin-bottom: 3rem;
-            color: #333;
+            color: var(--text-color);
         }
 
         .about-content {
@@ -138,31 +275,70 @@
             width: 250px;
             height: 250px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto;
             font-size: 4rem;
             color: white;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px var(--shadow);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .avatar:hover {
+            transform: scale(1.05) rotate(5deg);
         }
 
         .about-text h3 {
             font-size: 1.8rem;
             margin-bottom: 1rem;
-            color: #667eea;
+            color: var(--primary-color);
         }
 
         .about-text p {
             font-size: 1.1rem;
             margin-bottom: 1.5rem;
-            color: #666;
+            color: var(--text-color);
+        }
+
+        /* 统计数据 */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-color);
+            font-size: 0.9rem;
         }
 
         /* 技能区域 */
         .skills {
-            background: #f8f9fa;
+            background: var(--card-bg);
             padding: 80px 0;
         }
 
@@ -174,32 +350,239 @@
         }
 
         .skill-card {
-            background: white;
+            background: var(--bg-color);
             padding: 2rem;
             border-radius: 10px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            box-shadow: 0 5px 15px var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .skill-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px var(--shadow);
         }
 
         .skill-card i {
             font-size: 3rem;
-            color: #667eea;
+            color: var(--primary-color);
             margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .skill-card:hover i {
+            transform: rotateY(360deg);
         }
 
         .skill-card h4 {
             font-size: 1.3rem;
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--text-color);
         }
 
         .skill-card p {
-            color: #666;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* 项目展示 */
+        .projects {
+            background: var(--bg-color);
+            padding: 80px 0;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .project-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px var(--shadow);
+        }
+
+        .project-image {
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+
+        .project-content {
+            padding: 1.5rem;
+        }
+
+        .project-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .project-description {
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .project-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .project-tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        /* 游戏区域 */
+        .games {
+            background: var(--card-bg);
+            padding: 80px 0;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .game-card {
+            background: var(--bg-color);
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: scale(1.05);
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--accent-color);
+        }
+
+        /* 访客留言 */
+        .guestbook {
+            background: var(--bg-color);
+            padding: 80px 0;
+        }
+
+        .message-form {
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .messages-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .message-item {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 3px 10px var(--shadow);
+            animation: slideInUp 0.5s ease;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .message-time {
+            font-size: 0.8rem;
+            color: var(--text-color);
+            opacity: 0.6;
+        }
+
+        .message-content {
+            color: var(--text-color);
         }
 
         /* 联系区域 */
@@ -215,6 +598,7 @@
             justify-content: center;
             gap: 2rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
         .contact-link {
@@ -229,8 +613,8 @@
         }
 
         .contact-link:hover {
-            background: #667eea;
-            transform: translateY(-3px);
+            background: var(--primary-color);
+            transform: translateY(-3px) scale(1.1);
         }
 
         /* 页脚 */
@@ -239,6 +623,39 @@
             color: white;
             text-align: center;
             padding: 2rem 0;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-color);
         }
 
         /* 动画 */
@@ -250,6 +667,28 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 
@@ -268,8 +707,13 @@
                 text-align: center;
             }
 
-            .contact-links {
-                flex-wrap: wrap;
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -289,20 +733,45 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* 彩蛋：Konami Code */
+        .konami-mode {
+            animation: rainbow 2s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- 粒子背景 -->
+    <div id="particles"></div>
+
+    <!-- 音乐控制 -->
+    <button class="music-control" id="musicToggle">
+        <i class="fas fa-music"></i>
+    </button>
+    <audio id="bgMusic" loop>
+        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav">
+    </audio>
+
     <!-- 导航栏 -->
     <nav>
         <div class="container">
-            <div class="logo">
-                <i class="fas fa-code"></i> 我的网站
+            <div class="logo" onclick="konamiEasterEgg()">
+                <i class="fas fa-rocket"></i> 我的宇宙
             </div>
             <ul class="nav-links">
                 <li><a href="#home">首页</a></li>
                 <li><a href="#about">关于我</a></li>
                 <li><a href="#skills">技能</a></li>
+                <li><a href="#projects">项目</a></li>
+                <li><a href="#games">游戏</a></li>
+                <li><a href="#guestbook">留言</a></li>
                 <li><a href="#contact">联系</a></li>
+                <li><button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i></button></li>
             </ul>
         </div>
     </nav>
@@ -311,9 +780,14 @@
         <!-- 英雄区域 -->
         <section id="home" class="hero">
             <div class="container">
-                <h1>你好，我是 <span style="color: #FFD700;">开发者</span></h1>
-                <p>热爱编程，专注于创造优雅的数字体验</p>
-                <a href="#about" class="cta-button">了解更多</a>
+                <h1>你好，我是 <span style="color: var(--accent-color);">创造者</span></h1>
+                <div class="typewriter">
+                    <span class="typewriter-text" id="typewriterText"></span>
+                </div>
+                <div class="cta-buttons">
+                    <a href="#about" class="cta-button">探索我的世界</a>
+                    <a href="#games" class="cta-button secondary">来玩游戏吧</a>
+                </div>
             </div>
         </section>
 
@@ -323,15 +797,34 @@
                 <h2 class="section-title fade-in">关于我</h2>
                 <div class="about-content">
                     <div class="about-image fade-in">
-                        <div class="avatar">
-                            <i class="fas fa-user"></i>
+                        <div class="avatar" onclick="avatarClick()">
+                            <i class="fas fa-user-astronaut"></i>
                         </div>
                     </div>
                     <div class="about-text fade-in">
-                        <h3>你好！</h3>
-                        <p>我是一名充满热情的开发者，专注于创建现代化的Web应用程序。我喜欢学习新技术，解决复杂问题，并将创意转化为现实。</p>
-                        <p>在我的职业生涯中，我积累了丰富的前端和后端开发经验，擅长使用多种编程语言和框架来构建高质量的软件解决方案。</p>
-                        <p>除了编程，我还热爱设计、摄影和旅行。我相信技术应该服务于人，让生活变得更美好。</p>
+                        <h3>你好，数字世界的探索者！</h3>
+                        <p>我是一名充满好奇心的开发者，热爱创造有趣的数字体验。我相信技术不仅能解决问题，更能带来快乐和惊喜。</p>
+                        <p>在这个充满可能性的数字宇宙中，我喜欢用代码编织梦想，用创意点亮生活。每一行代码都是一次小小的冒险！</p>
+                        <p>除了编程，我还是个游戏爱好者、音乐迷和生活观察家。让我们一起在这个奇妙的网络空间中探索无限可能！</p>
+                        
+                        <div class="stats">
+                            <div class="stat-item">
+                                <span class="stat-number" data-target="1000">0</span>
+                                <span class="stat-label">行代码</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" data-target="50">0</span>
+                                <span class="stat-label">个项目</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" data-target="365">0</span>
+                                <span class="stat-label">天学习</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" data-target="99">0</span>
+                                <span class="stat-label">杯咖啡</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -340,28 +833,131 @@
         <!-- 技能 -->
         <section id="skills" class="skills">
             <div class="container">
-                <h2 class="section-title fade-in">我的技能</h2>
+                <h2 class="section-title fade-in">我的技能宝库</h2>
                 <div class="skills-grid">
-                    <div class="skill-card fade-in">
+                    <div class="skill-card fade-in" onclick="skillClick(this)">
                         <i class="fab fa-html5"></i>
-                        <h4>前端开发</h4>
-                        <p>HTML5, CSS3, JavaScript, React, Vue.js等现代前端技术</p>
+                        <h4>前端魔法</h4>
+                        <p>HTML5, CSS3, JavaScript, React, Vue.js - 让网页活起来的魔法咒语</p>
                     </div>
-                    <div class="skill-card fade-in">
+                    <div class="skill-card fade-in" onclick="skillClick(this)">
                         <i class="fas fa-server"></i>
-                        <h4>后端开发</h4>
-                        <p>Node.js, Python, Java, 数据库设计与API开发</p>
+                        <h4>后端炼金术</h4>
+                        <p>Node.js, Python, Java - 在服务器的深处炼制数据的黄金</p>
                     </div>
-                    <div class="skill-card fade-in">
+                    <div class="skill-card fade-in" onclick="skillClick(this)">
                         <i class="fas fa-mobile-alt"></i>
-                        <h4>移动开发</h4>
-                        <p>响应式设计, PWA, 跨平台移动应用开发</p>
+                        <h4>移动端召唤术</h4>
+                        <p>响应式设计, PWA - 召唤在任何设备上都完美的应用</p>
                     </div>
-                    <div class="skill-card fade-in">
+                    <div class="skill-card fade-in" onclick="skillClick(this)">
                         <i class="fas fa-cloud"></i>
-                        <h4>云服务</h4>
-                        <p>AWS, Azure, Docker, CI/CD, 云原生应用部署</p>
+                        <h4>云端飞行术</h4>
+                        <p>AWS, Docker, CI/CD - 让应用在云端自由翱翔</p>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 项目展示 -->
+        <section id="projects" class="projects">
+            <div class="container">
+                <h2 class="section-title fade-in">我的创作集</h2>
+                <div class="projects-grid">
+                    <div class="project-card fade-in" onclick="showProject('project1')">
+                        <div class="project-image">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div class="project-content">
+                            <h3 class="project-title">太空探索器</h3>
+                            <p class="project-description">一个互动的太空探索网站，带你遨游星际</p>
+                            <div class="project-tags">
+                                <span class="project-tag">React</span>
+                                <span class="project-tag">Three.js</span>
+                                <span class="project-tag">WebGL</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-card fade-in" onclick="showProject('project2')">
+                        <div class="project-image">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="project-content">
+                            <h3 class="project-title">像素冒险</h3>
+                            <p class="project-description">复古风格的2D平台游戏，充满挑战和乐趣</p>
+                            <div class="project-tags">
+                                <span class="project-tag">JavaScript</span>
+                                <span class="project-tag">Canvas</span>
+                                <span class="project-tag">Game</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-card fade-in" onclick="showProject('project3')">
+                        <div class="project-image">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="project-content">
+                            <h3 class="project-title">音乐可视化</h3>
+                            <p class="project-description">将音乐转化为美丽的视觉艺术</p>
+                            <div class="project-tags">
+                                <span class="project-tag">Web Audio</span>
+                                <span class="project-tag">Canvas</span>
+                                <span class="project-tag">Art</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 游戏区域 -->
+        <section id="games" class="games">
+            <div class="container">
+                <h2 class="section-title fade-in">游戏时间！</h2>
+                <div class="games-grid">
+                    <div class="game-card fade-in" onclick="playGame('memory')">
+                        <div class="game-icon">🧠</div>
+                        <h4>记忆挑战</h4>
+                        <p>测试你的记忆力！</p>
+                    </div>
+                    <div class="game-card fade-in" onclick="playGame('snake')">
+                        <div class="game-icon">🐍</div>
+                        <h4>贪吃蛇</h4>
+                        <p>经典的贪吃蛇游戏</p>
+                    </div>
+                    <div class="game-card fade-in" onclick="playGame('quiz')">
+                        <div class="game-icon">🤔</div>
+                        <h4>知识问答</h4>
+                        <p>挑战你的知识储备</p>
+                    </div>
+                    <div class="game-card fade-in" onclick="playGame('color')">
+                        <div class="game-icon">🎨</div>
+                        <h4>颜色猜测</h4>
+                        <p>猜猜这是什么颜色</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 访客留言 -->
+        <section id="guestbook" class="guestbook">
+            <div class="container">
+                <h2 class="section-title fade-in">访客留言板</h2>
+                <div class="message-form fade-in">
+                    <form id="messageForm">
+                        <div class="form-group">
+                            <label for="guestName">你的昵称</label>
+                            <input type="text" id="guestName" required placeholder="告诉我你的名字吧">
+                        </div>
+                        <div class="form-group">
+                            <label for="guestMessage">留言内容</label>
+                            <textarea id="guestMessage" rows="4" required placeholder="写下你想说的话..."></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">发送留言 ✨</button>
+                    </form>
+                </div>
+                <div class="messages-container" id="messagesContainer">
+                    <!-- 留言将在这里显示 -->
                 </div>
             </div>
         </section>
@@ -370,7 +966,7 @@
         <section id="contact" class="contact">
             <div class="container">
                 <h2 class="section-title fade-in">联系我</h2>
-                <p class="fade-in">有项目想要合作？或者只是想打个招呼？</p>
+                <p class="fade-in">想要一起创造些有趣的东西吗？</p>
                 <div class="contact-links fade-in">
                     <a href="mailto:your.email@example.com" class="contact-link" title="邮箱">
                         <i class="fas fa-envelope"></i>
@@ -392,11 +988,350 @@
     <!-- 页脚 -->
     <footer>
         <div class="container">
-            <p>&copy; 2024 我的个人网站. 用 ❤️ 制作</p>
+            <p>&copy; 2024 我的数字宇宙. 用 ❤️ 和 ☕ 制作</p>
         </div>
     </footer>
 
+    <!-- 模态框 -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="gameContent">
+                <!-- 游戏内容将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
     <script>
+        // 打字机效果
+        const typewriterTexts = [
+            '热爱编程，专注于创造优雅的数字体验',
+            '探索技术的无限可能性',
+            '用代码编织梦想',
+            '让每一行代码都充满创意',
+            '在数字世界中自由翱翔'
+        ];
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+
+        function typeWriter() {
+            const currentText = typewriterTexts[textIndex];
+            const typewriterElement = document.getElementById('typewriterText');
+
+            if (isDeleting) {
+                typewriterElement.textContent = currentText.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typewriterElement.textContent = currentText.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            if (!isDeleting && charIndex === currentText.length) {
+                setTimeout(() => isDeleting = true, 2000);
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                textIndex = (textIndex + 1) % typewriterTexts.length;
+            }
+
+            setTimeout(typeWriter, isDeleting ? 50 : 100);
+        }
+
+        // 粒子背景
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 5 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // 主题切换
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle i');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                themeToggle.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // 音乐控制
+        function toggleMusic() {
+            const music = document.getElementById('bgMusic');
+            const musicToggle = document.getElementById('musicToggle');
+            
+            if (music.paused) {
+                music.play();
+                musicToggle.classList.add('playing');
+                musicToggle.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                music.pause();
+                musicToggle.classList.remove('playing');
+                musicToggle.innerHTML = '<i class="fas fa-music"></i>';
+            }
+        }
+
+        // 数字动画
+        function animateNumbers() {
+            const stats = document.querySelectorAll('.stat-number');
+            stats.forEach(stat => {
+                const target = parseInt(stat.getAttribute('data-target'));
+                const increment = target / 100;
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    stat.textContent = Math.floor(current);
+                }, 20);
+            });
+        }
+
+        // 头像点击
+        function avatarClick() {
+            const avatar = document.querySelector('.avatar');
+            avatar.style.transform = 'scale(1.2) rotate(360deg)';
+            setTimeout(() => {
+                avatar.style.transform = 'scale(1) rotate(0deg)';
+            }, 500);
+            
+            // 显示随机消息
+            const messages = ['你好！', '很高兴见到你！', '欢迎来到我的世界！', '一起探索吧！'];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            showNotification(randomMessage);
+        }
+
+        // 技能卡片点击
+        function skillClick(card) {
+            card.style.background = `linear-gradient(135deg, var(--primary-color), var(--secondary-color))`;
+            card.style.color = 'white';
+            setTimeout(() => {
+                card.style.background = 'var(--bg-color)';
+                card.style.color = 'var(--text-color)';
+            }, 1000);
+        }
+
+        // 显示项目详情
+        function showProject(projectId) {
+            const projects = {
+                project1: {
+                    title: '太空探索器',
+                    description: '这是一个使用React和Three.js构建的交互式太空探索网站。用户可以在3D空间中导航，探索不同的星球和星系。',
+                    features: ['3D可视化', '交互式导航', '实时渲染', '教育内容']
+                },
+                project2: {
+                    title: '像素冒险',
+                    description: '复古风格的2D平台游戏，玩家需要收集宝石并避开敌人。使用纯JavaScript和Canvas API开发。',
+                    features: ['像素艺术', '物理引擎', '关卡系统', '音效配乐']
+                },
+                project3: {
+                    title: '音乐可视化',
+                    description: '将音频数据转换为动态的视觉效果，支持多种可视化模式和自定义颜色主题。',
+                    features: ['实时分析', '多种模式', '自定义主题', '导出功能']
+                }
+            };
+            
+            const project = projects[projectId];
+            showNotification(`${project.title}: ${project.description}`);
+        }
+
+        // 游戏功能
+        function playGame(gameType) {
+            const modal = document.getElementById('gameModal');
+            const gameContent = document.getElementById('gameContent');
+            
+            let content = '';
+            
+            switch(gameType) {
+                case 'memory':
+                    content = createMemoryGame();
+                    break;
+                case 'snake':
+                    content = createSnakeGame();
+                    break;
+                case 'quiz':
+                    content = createQuizGame();
+                    break;
+                case 'color':
+                    content = createColorGame();
+                    break;
+            }
+            
+            gameContent.innerHTML = content;
+            modal.style.display = 'block';
+        }
+
+        // 记忆游戏
+        function createMemoryGame() {
+            return `
+                <h3>记忆挑战</h3>
+                <p>记住下面的数字序列，然后按顺序点击！</p>
+                <div id="memorySequence" style="font-size: 2rem; margin: 1rem 0; min-height: 60px;"></div>
+                <div id="memoryButtons" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto;">
+                    ${Array.from({length: 9}, (_, i) => `<button onclick="memoryClick(${i+1})" style="padding: 1rem; font-size: 1.5rem; border: none; border-radius: 10px; background: var(--primary-color); color: white; cursor: pointer;">${i+1}</button>`).join('')}
+                </div>
+                <button onclick="startMemoryGame()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-color); border: none; border-radius: 5px; cursor: pointer;">开始游戏</button>
+                <div id="memoryScore">分数: 0</div>
+            `;
+        }
+
+        // 贪吃蛇游戏
+        function createSnakeGame() {
+            return `
+                <h3>贪吃蛇</h3>
+                <canvas id="snakeCanvas" width="400" height="400" style="border: 2px solid var(--primary-color); background: #000;"></canvas>
+                <div style="margin-top: 1rem;">
+                    <button onclick="startSnakeGame()" style="padding: 0.5rem 1rem; background: var(--accent-color); border: none; border-radius: 5px; cursor: pointer;">开始游戏</button>
+                    <div>使用方向键控制蛇的移动</div>
+                    <div id="snakeScore">分数: 0</div>
+                </div>
+            `;
+        }
+
+        // 知识问答游戏
+        function createQuizGame() {
+            return `
+                <h3>知识问答</h3>
+                <div id="quizQuestion" style="font-size: 1.2rem; margin: 1rem 0;"></div>
+                <div id="quizOptions" style="display: grid; gap: 10px;"></div>
+                <button onclick="startQuizGame()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-color); border: none; border-radius: 5px; cursor: pointer;">开始问答</button>
+                <div id="quizScore">分数: 0</div>
+            `;
+        }
+
+        // 颜色猜测游戏
+        function createColorGame() {
+            return `
+                <h3>颜色猜测</h3>
+                <div id="colorDisplay" style="width: 200px; height: 200px; margin: 1rem auto; border-radius: 10px; border: 3px solid var(--primary-color);"></div>
+                <div id="colorOptions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 300px; margin: 0 auto;"></div>
+                <button onclick="startColorGame()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--accent-color); border: none; border-radius: 5px; cursor: pointer;">开始游戏</button>
+                <div id="colorScore">分数: 0</div>
+            `;
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('gameModal').style.display = 'none';
+        }
+
+        // 留言功能
+        function initGuestbook() {
+            const form = document.getElementById('messageForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('guestName').value;
+                const message = document.getElementById('guestMessage').value;
+                
+                addMessage(name, message);
+                form.reset();
+            });
+            
+            // 加载已有留言
+            loadMessages();
+        }
+
+        function addMessage(name, message) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message-item';
+            
+            const now = new Date();
+            const timeString = now.toLocaleString();
+            
+            messageElement.innerHTML = `
+                <div class="message-header">
+                    <span class="message-author">${name}</span>
+                    <span class="message-time">${timeString}</span>
+                </div>
+                <div class="message-content">${message}</div>
+            `;
+            
+            messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+            
+            // 保存到本地存储
+            saveMessage(name, message, timeString);
+            
+            showNotification('留言发送成功！');
+        }
+
+        function saveMessage(name, message, time) {
+            let messages = JSON.parse(localStorage.getItem('guestMessages') || '[]');
+            messages.unshift({name, message, time});
+            localStorage.setItem('guestMessages', JSON.stringify(messages.slice(0, 50))); // 只保留最新50条
+        }
+
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('guestMessages') || '[]');
+            const messagesContainer = document.getElementById('messagesContainer');
+            
+            messages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message-item';
+                messageElement.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-author">${msg.name}</span>
+                        <span class="message-time">${msg.time}</span>
+                    </div>
+                    <div class="message-content">${msg.message}</div>
+                `;
+                messagesContainer.appendChild(messageElement);
+            });
+        }
+
+        // 通知功能
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: var(--primary-color);
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px var(--shadow);
+                z-index: 3000;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Konami Code 彩蛋
+        let konamiCode = [];
+        const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
+
+        function konamiEasterEgg() {
+            document.body.classList.toggle('konami-mode');
+            showNotification('🎉 彩蛋模式已激活！');
+        }
+
         // 滚动动画
         const observerOptions = {
             threshold: 0.1,
@@ -407,35 +1342,136 @@
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
+                    
+                    // 如果是统计数据区域，开始数字动画
+                    if (entry.target.querySelector('.stat-number')) {
+                        animateNumbers();
+                    }
                 }
             });
         }, observerOptions);
 
-        // 观察所有需要动画的元素
-        document.querySelectorAll('.fade-in').forEach(el => {
-            observer.observe(el);
-        });
-
-        // 平滑滚动到顶部
-        window.addEventListener('scroll', function() {
-            const nav = document.querySelector('nav');
-            if (window.scrollY > 100) {
-                nav.style.background = 'rgba(255, 255, 255, 0.98)';
-            } else {
-                nav.style.background = 'rgba(255, 255, 255, 0.95)';
-            }
-        });
-
-        // 添加一些交互效果
-        document.querySelectorAll('.skill-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-10px) scale(1.02)';
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 启动打字机效果
+            typeWriter();
+            
+            // 创建粒子背景
+            createParticles();
+            
+            // 初始化留言板
+            initGuestbook();
+            
+            // 观察所有需要动画的元素
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
             });
             
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0) scale(1)';
+            // 加载保存的主题
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+            }
+            
+            // 音乐控制事件
+            document.getElementById('musicToggle').addEventListener('click', toggleMusic);
+            
+            // Konami Code 监听
+            document.addEventListener('keydown', function(e) {
+                konamiCode.push(e.keyCode);
+                if (konamiCode.length > konamiSequence.length) {
+                    konamiCode.shift();
+                }
+                if (konamiCode.join(',') === konamiSequence.join(',')) {
+                    konamiEasterEgg();
+                    konamiCode = [];
+                }
+            });
+            
+            // 平滑滚动导航
+            window.addEventListener('scroll', function() {
+                const nav = document.querySelector('nav');
+                if (window.scrollY > 100) {
+                    nav.style.background = document.body.getAttribute('data-theme') === 'dark' 
+                        ? 'rgba(31, 41, 55, 0.98)' 
+                        : 'rgba(255, 255, 255, 0.98)';
+                } else {
+                    nav.style.background = document.body.getAttribute('data-theme') === 'dark' 
+                        ? 'rgba(31, 41, 55, 0.95)' 
+                        : 'rgba(255, 255, 255, 0.95)';
+                }
             });
         });
+
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 简化的游戏逻辑（示例）
+        let memorySequence = [];
+        let memoryUserInput = [];
+        let memoryScore = 0;
+
+        function startMemoryGame() {
+            memorySequence = [];
+            memoryUserInput = [];
+            memoryScore = 0;
+            generateMemorySequence();
+        }
+
+        function generateMemorySequence() {
+            memorySequence.push(Math.floor(Math.random() * 9) + 1);
+            showMemorySequence();
+        }
+
+        function showMemorySequence() {
+            const sequenceElement = document.getElementById('memorySequence');
+            sequenceElement.innerHTML = memorySequence.join(' - ');
+            
+            setTimeout(() => {
+                sequenceElement.innerHTML = '?';
+            }, 2000);
+        }
+
+        function memoryClick(number) {
+            memoryUserInput.push(number);
+            
+            if (memoryUserInput[memoryUserInput.length - 1] !== memorySequence[memoryUserInput.length - 1]) {
+                showNotification('游戏结束！最终分数: ' + memoryScore);
+                return;
+            }
+            
+            if (memoryUserInput.length === memorySequence.length) {
+                memoryScore += 10;
+                document.getElementById('memoryScore').textContent = '分数: ' + memoryScore;
+                memoryUserInput = [];
+                setTimeout(generateMemorySequence, 1000);
+            }
+        }
+
+        // 其他游戏的简化实现...
+        function startSnakeGame() {
+            showNotification('贪吃蛇游戏开发中...');
+        }
+
+        function startQuizGame() {
+            showNotification('知识问答游戏开发中...');
+        }
+
+        function startColorGame() {
+            showNotification('颜色猜测游戏开发中...');
+        }
     </script>
 </body>
 </html>
