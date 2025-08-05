@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗夜幸存者 - 开发调试版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .game-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .debug-section {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        #survivorCanvas {
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            background: #001122;
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .game-ui {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: center;
+        }
+
+        .game-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .health-bar, .exp-bar {
+            width: 150px;
+            height: 15px;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ff6666);
+            transition: width 0.3s ease;
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #44ff44, #66ff66);
+            transition: width 0.3s ease;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .game-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .game-btn.start {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .game-btn.pause {
+            background: #ff9800;
+            color: white;
+        }
+
+        .game-btn.restart {
+            background: #f44336;
+            color: white;
+        }
+
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .debug-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #FFD700;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 5px;
+        }
+
+        .param-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .param-group h4 {
+            color: #87CEEB;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .param-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+
+        .param-label {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .param-input {
+            width: 80px;
+            padding: 4px 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .param-input:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .apply-btn {
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .apply-btn:hover {
+            background: #FFA500;
+        }
+
+        .upgrade-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            z-index: 3000;
+            min-width: 400px;
+        }
+
+        .upgrade-options {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .upgrade-option {
+            padding: 1rem;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .upgrade-option:hover {
+            background: #FFD700;
+            color: #000;
+            transform: scale(1.02);
+        }
+
+        .upgrade-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .upgrade-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .debug-section {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 游戏区域 -->
+        <div class="game-section">
+            <h1 class="game-title">🧛‍♂️ 暗夜幸存者 - 开发调试版</h1>
+            
+            <canvas id="survivorCanvas" width="800" height="600"></canvas>
+            
+            <div class="game-ui">
+                <div class="game-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="level">1</div>
+                        <div class="stat-label">等级</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="score">0</div>
+                        <div class="stat-label">分数</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="kills">0</div>
+                        <div class="stat-label">击杀</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="time">0:00</div>
+                        <div class="stat-label">时间</div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span>血量:</span>
+                        <div class="health-bar">
+                            <div class="health-fill" id="healthFill" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <span>经验:</span>
+                        <div class="exp-bar">
+                            <div class="exp-fill" id="expFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-controls">
+                    <button class="game-btn start" onclick="startSurvivorGame()">开始游戏</button>
+                    <button class="game-btn pause" onclick="pauseSurvivorGame()">暂停</button>
+                    <button class="game-btn restart" onclick="restartSurvivorGame()">重新开始</button>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 0.9rem; opacity: 0.8;">
+                使用 WASD 或方向键移动，自动攻击最近的敌人
+            </div>
+        </div>
+
+        <!-- 调试面板 -->
+        <div class="debug-section">
+            <h2 class="debug-title">🛠️ 实时调试面板</h2>
+            
+            <div class="instructions">
+                <strong>使用说明：</strong><br>
+                • 修改参数后点击"应用更改"立即生效<br>
+                • 游戏运行中可实时调整所有参数<br>
+                • 参数会立即影响新生成的敌人和现有游戏对象
+            </div>
+
+            <!-- 玩家参数 -->
+            <div class="param-group">
+                <h4>👤 玩家参数</h4>
+                <div class="param-item">
+                    <span class="param-label">移动速度</span>
+                    <input type="number" class="param-input" id="playerSpeed" value="2.2" step="0.1" min="0.1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">最大血量</span>
+                    <input type="number" class="param-input" id="playerMaxHealth" value="100" step="5" min="10">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">升级所需经验</span>
+                    <input type="number" class="param-input" id="expToNext" value="100" step="10" min="10">
+                </div>
+                <button class="apply-btn" onclick="applyPlayerParams()">应用玩家参数</button>
+            </div>
+
+            <!-- 敌人生成参数 -->
+            <div class="param-group">
+                <h4>👹 敌人生成</h4>
+                <div class="param-item">
+                    <span class="param-label">初始生成率</span>
+                    <input type="number" class="param-input" id="spawnRateBase" value="0.005" step="0.001" min="0.001">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">生成率增长</span>
+                    <input type="number" class="param-input" id="spawnRateGrowth" value="0.0002" step="0.0001" min="0">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">最大生成率</span>
+                    <input type="number" class="param-input" id="spawnRateMax" value="0.025" step="0.005" min="0.005">
+                </div>
+                <button class="apply-btn" onclick="applySpawnParams()">应用生成参数</button>
+            </div>
+
+            <!-- 暗影蝙蝠参数 -->
+            <div class="param-group">
+                <h4>🦇 暗影蝙蝠</h4>
+                <div class="param-item">
+                    <span class="param-label">血量</span>
+                    <input type="number" class="param-input" id="batHealth" value="25" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">移动速度</span>
+                    <input type="number" class="param-input" id="batSpeed" value="1.0" step="0.1" min="0.1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">攻击伤害</span>
+                    <input type="number" class="param-input" id="batDamage" value="8" step="1" min="1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">经验值</span>
+                    <input type="number" class="param-input" id="batExp" value="5" step="1" min="1">
+                </div>
+                <button class="apply-btn" onclick="applyBatParams()">应用蝙蝠参数</button>
+            </div>
+
+            <!-- 骷髅战士参数 -->
+            <div class="param-group">
+                <h4>💀 骷髅战士</h4>
+                <div class="param-item">
+                    <span class="param-label">血量</span>
+                    <input type="number" class="param-input" id="skeletonHealth" value="50" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">移动速度</span>
+                    <input type="number" class="param-input" id="skeletonSpeed" value="0.7" step="0.1" min="0.1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">攻击伤害</span>
+                    <input type="number" class="param-input" id="skeletonDamage" value="15" step="1" min="1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">经验值</span>
+                    <input type="number" class="param-input" id="skeletonExp" value="10" step="1" min="1">
+                </div>
+                <button class="apply-btn" onclick="applySkeletonParams()">应用骷髅参数</button>
+            </div>
+
+            <!-- 暗黑法师参数 -->
+            <div class="param-group">
+                <h4>🧙‍♂️ 暗黑法师</h4>
+                <div class="param-item">
+                    <span class="param-label">血量</span>
+                    <input type="number" class="param-input" id="mageHealth" value="35" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">移动速度</span>
+                    <input type="number" class="param-input" id="mageSpeed" value="0.5" step="0.1" min="0.1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">攻击伤害</span>
+                    <input type="number" class="param-input" id="mageDamage" value="12" step="1" min="1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">经验值</span>
+                    <input type="number" class="param-input" id="mageExp" value="15" step="1" min="1">
+                </div>
+                <button class="apply-btn" onclick="applyMageParams()">应用法师参数</button>
+            </div>
+
+            <!-- 武器参数 -->
+            <div class="param-group">
+                <h4>⚔️ 魔法飞弹</h4>
+                <div class="param-item">
+                    <span class="param-label">伤害</span>
+                    <input type="number" class="param-input" id="weaponDamage" value="20" step="1" min="1">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">攻击速度(ms)</span>
+                    <input type="number" class="param-input" id="weaponCooldown" value="800" step="50" min="50">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">射程</span>
+                    <input type="number" class="param-input" id="weaponRange" value="250" step="10" min="50">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">子弹速度</span>
+                    <input type="number" class="param-input" id="weaponSpeed" value="6" step="0.5" min="1">
+                </div>
+                <button class="apply-btn" onclick="applyWeaponParams()">应用武器参数</button>
+            </div>
+
+            <!-- 升级系数 -->
+            <div class="param-group">
+                <h4>📈 升级系数</h4>
+                <div class="param-item">
+                    <span class="param-label">伤害提升(%)</span>
+                    <input type="number" class="param-input" id="damageUpgrade" value="25" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">攻速提升(%)</span>
+                    <input type="number" class="param-input" id="speedUpgrade" value="30" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">血量增加</span>
+                    <input type="number" class="param-input" id="healthUpgrade" value="30" step="5" min="5">
+                </div>
+                <div class="param-item">
+                    <span class="param-label">移速提升(%)</span>
+                    <input type="number" class="param-input" id="moveUpgrade" value="30" step="5" min="5">
+                </div>
+                <button class="apply-btn" onclick="applyUpgradeParams()">应用升级系数</button>
+            </div>
+
+            <!-- 快速调试按钮 -->
+            <div class="param-group">
+                <h4>🚀 快速调试</h4>
+                <button class="apply-btn" onclick="setEasyMode()" style="background: #4CAF50; margin-bottom: 5px;">简单模式</button>
+                <button class="apply-btn" onclick="setNormalMode()" style="background: #FF9800; margin-bottom: 5px;">普通模式</button>
+                <button class="apply-btn" onclick="setHardMode()" style="background: #F44336; margin-bottom: 5px;">困难模式</button>
+                <button class="apply-btn" onclick="setTestMode()" style="background: #9C27B0;">测试模式</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 升级面板 -->
+    <div id="upgradePanel" class="upgrade-panel">
+        <h3 style="color: #FFD700;">选择升级</h3>
+        <div class="upgrade-options" id="upgradeOptions">
+            <!-- 升级选项将在这里生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 吸血鬼幸存者游戏逻辑
+        let survivorGame = {
+            canvas: null,
+            ctx: null,
+            running: false,
+            paused: false,
+            lastTime: 0,
+            
+            // 玩家
+            player: {
+                x: 400,
+                y: 300,
+                radius: 15,
+                health: 100,
+                maxHealth: 100,
+                speed: 2.2,
+                exp: 0,
+                level: 1,
+                expToNext: 100
+            },
+            
+            // 游戏状态
+            score: 0,
+            kills: 0,
+            startTime: 0,
+            
+            // 游戏对象
+            enemies: [],
+            projectiles: [],
+            particles: [],
+            pickups: [],
+            
+            // 可调试参数
+            params: {
+                spawnRateBase: 0.005,
+                spawnRateGrowth: 0.0002,
+                spawnRateMax: 0.025,
+                damageUpgradePercent: 25,
+                speedUpgradePercent: 30,
+                healthUpgradeAmount: 30,
+                moveUpgradePercent: 30
+            },
+            
+            // 武器系统
+            weapons: [
+                {
+                    name: '魔法飞弹',
+                    damage: 20,
+                    speed: 6,
+                    cooldown: 800,
+                    lastFire: 0,
+                    level: 1,
+                    range: 250,
+                    color: '#FFD700',
+                    type: 'projectile'
+                }
+            ],
+            
+            // 可解锁武器
+            availableWeapons: [
+                {
+                    name: '火球术',
+                    damage: 40,
+                    speed: 4,
+                    cooldown: 1500,
+                    range: 200,
+                    color: '#FF4500',
+                    type: 'projectile',
+                    effect: 'explosion'
+                },
+                {
+                    name: '冰霜箭',
+                    damage: 15,
+                    speed: 8,
+                    cooldown: 600,
+                    range: 300,
+                    color: '#87CEEB',
+                    type: 'projectile',
+                    effect: 'slow'
+                },
+                {
+                    name: '雷电链',
+                    damage: 30,
+                    speed: 0,
+                    cooldown: 2000,
+                    range: 150,
+                    color: '#FFFF00',
+                    type: 'chain',
+                    chainCount: 3
+                },
+                {
+                    name: '旋转刀刃',
+                    damage: 25,
+                    speed: 5,
+                    cooldown: 100,
+                    range: 80,
+                    color: '#C0C0C0',
+                    type: 'orbit'
+                },
+                {
+                    name: '治疗光环',
+                    damage: 0,
+                    speed: 0,
+                    cooldown: 3000,
+                    range: 100,
+                    color: '#90EE90',
+                    type: 'heal',
+                    healAmount: 30
+                }
+            ],
+            
+            // 敌人类型
+            enemyTypes: [
+                {
+                    name: '暗影蝙蝠',
+                    health: 25,
+                    speed: 1.0,
+                    damage: 8,
+                    exp: 5,
+                    color: '#8B4513',
+                    radius: 8
+                },
+                {
+                    name: '骷髅战士',
+                    health: 50,
+                    speed: 0.7,
+                    damage: 15,
+                    exp: 10,
+                    color: '#DDDDDD',
+                    radius: 12
+                },
+                {
+                    name: '暗黑法师',
+                    health: 35,
+                    speed: 0.5,
+                    damage: 12,
+                    exp: 15,
+                    color: '#4B0082',
+                    radius: 10
+                }
+            ],
+            
+            // 升级选项
+            upgrades: [
+                {
+                    name: '增加伤害',
+                    description: '武器伤害 +25%',
+                    apply: () => {
+                        const percent = survivorGame.params.damageUpgradePercent;
+                        survivorGame.weapons.forEach(w => w.damage = Math.floor(w.damage * (1 + percent/100)));
+                    }
+                },
+                {
+                    name: '提升攻速',
+                    description: '攻击速度 +30%',
+                    apply: () => {
+                        const percent = survivorGame.params.speedUpgradePercent;
+                        survivorGame.weapons.forEach(w => w.cooldown = Math.floor(w.cooldown * (1 - percent/100)));
+                    }
+                },
+                {
+                    name: '增加血量',
+                    description: '最大血量 +30',
+                    apply: () => {
+                        const amount = survivorGame.params.healthUpgradeAmount;
+                        survivorGame.player.maxHealth += amount;
+                        survivorGame.player.health = survivorGame.player.maxHealth;
+                    }
+                },
+                {
+                    name: '移动加速',
+                    description: '移动速度 +30%',
+                    apply: () => {
+                        const percent = survivorGame.params.moveUpgradePercent;
+                        survivorGame.player.speed *= (1 + percent/100);
+                    }
+                },
+                {
+                    name: '射程延长',
+                    description: '武器射程 +40%',
+                    apply: () => {
+                        survivorGame.weapons.forEach(w => w.range = Math.floor(w.range * 1.4));
+                    }
+                },
+                {
+                    name: '生命恢复',
+                    description: '每秒恢复 3 点生命值',
+                    apply: () => {
+                        survivorGame.hasHealthRegen = true;
+                        survivorGame.healthRegenRate = (survivorGame.healthRegenRate || 0) + 3;
+                    }
+                },
+                {
+                    name: '获得新武器: 火球术',
+                    description: '解锁火球术，造成爆炸伤害',
+                    condition: () => !survivorGame.weapons.find(w => w.name === '火球术'),
+                    apply: () => {
+                        const fireball = {...survivorGame.availableWeapons.find(w => w.name === '火球术')};
+                        fireball.lastFire = 0;
+                        survivorGame.weapons.push(fireball);
+                    }
+                },
+                {
+                    name: '获得新武器: 冰霜箭',
+                    description: '解锁冰霜箭，减缓敌人速度',
+                    condition: () => !survivorGame.weapons.find(w => w.name === '冰霜箭'),
+                    apply: () => {
+                        const frostArrow = {...survivorGame.availableWeapons.find(w => w.name === '冰霜箭')};
+                        frostArrow.lastFire = 0;
+                        survivorGame.weapons.push(frostArrow);
+                    }
+                },
+                {
+                    name: '获得新武器: 雷电链',
+                    description: '解锁雷电链，可连锁攻击',
+                    condition: () => !survivorGame.weapons.find(w => w.name === '雷电链'),
+                    apply: () => {
+                        const lightning = {...survivorGame.availableWeapons.find(w => w.name === '雷电链')};
+                        lightning.lastFire = 0;
+                        survivorGame.weapons.push(lightning);
+                    }
+                },
+                {
+                    name: '获得新武器: 旋转刀刃',
+                    description: '解锁旋转刀刃，围绕角色旋转',
+                    condition: () => !survivorGame.weapons.find(w => w.name === '旋转刀刃'),
+                    apply: () => {
+                        const blade = {...survivorGame.availableWeapons.find(w => w.name === '旋转刀刃')};
+                        blade.lastFire = 0;
+                        blade.angle = 0;
+                        survivorGame.weapons.push(blade);
+                    }
+                },
+                {
+                    name: '获得新武器: 治疗光环',
+                    description: '解锁治疗光环，定期恢复生命',
+                    condition: () => !survivorGame.weapons.find(w => w.name === '治疗光环'),
+                    apply: () => {
+                        const heal = {...survivorGame.availableWeapons.find(w => w.name === '治疗光环')};
+                        heal.lastFire = 0;
+                        survivorGame.weapons.push(heal);
+                    }
+                },
+                {
+                    name: '武器进化',
+                    description: '随机升级一个武器',
+                    condition: () => survivorGame.weapons.length > 1,
+                    apply: () => {
+                        const weapon = survivorGame.weapons[Math.floor(Math.random() * survivorGame.weapons.length)];
+                        weapon.damage = Math.floor(weapon.damage * 1.5);
+                        weapon.range = Math.floor(weapon.range * 1.2);
+                        if (weapon.cooldown > 100) weapon.cooldown = Math.floor(weapon.cooldown * 0.8);
+                    }
+                }
+            ]
+        };
+
+        // 初始化游戏
+        function initSurvivorGame() {
+            survivorGame.canvas = document.getElementById('survivorCanvas');
+            survivorGame.ctx = survivorGame.canvas.getContext('2d');
+            
+            // 键盘控制
+            survivorGame.keys = {};
+            document.addEventListener('keydown', (e) => {
+                survivorGame.keys[e.key.toLowerCase()] = true;
+            });
+            document.addEventListener('keyup', (e) => {
+                survivorGame.keys[e.key.toLowerCase()] = false;
+            });
+        }
+
+        function startSurvivorGame() {
+            if (survivorGame.running) return;
+            
+            survivorGame.running = true;
+            survivorGame.paused = false;
+            survivorGame.startTime = Date.now();
+            survivorGame.lastTime = 0;
+            
+            // 重置游戏状态
+            survivorGame.player = {
+                x: 400,
+                y: 300,
+                radius: 15,
+                health: parseInt(document.getElementById('playerMaxHealth').value),
+                maxHealth: parseInt(document.getElementById('playerMaxHealth').value),
+                speed: parseFloat(document.getElementById('playerSpeed').value),
+                exp: 0,
+                level: 1,
+                expToNext: parseInt(document.getElementById('expToNext').value)
+            };
+            
+            survivorGame.score = 0;
+            survivorGame.kills = 0;
+            survivorGame.enemies = [];
+            survivorGame.projectiles = [];
+            survivorGame.particles = [];
+            survivorGame.pickups = [];
+            survivorGame.hasHealthRegen = false;
+            
+            // 重置武器
+            survivorGame.weapons = [
+                {
+                    name: '魔法飞弹',
+                    damage: parseInt(document.getElementById('weaponDamage').value),
+                    speed: parseFloat(document.getElementById('weaponSpeed').value),
+                    cooldown: parseInt(document.getElementById('weaponCooldown').value),
+                    lastFire: 0,
+                    level: 1,
+                    range: parseInt(document.getElementById('weaponRange').value),
+                    color: '#FFD700',
+                    type: 'projectile'
+                }
+            ];
+            
+            gameLoop();
+        }
+
+        function pauseSurvivorGame() {
+            survivorGame.paused = !survivorGame.paused;
+        }
+
+        function restartSurvivorGame() {
+            survivorGame.running = false;
+            survivorGame.paused = false;
+            startSurvivorGame();
+        }
+
+        function gameLoop(currentTime = 0) {
+            if (!survivorGame.running) return;
+            
+            const deltaTime = currentTime - survivorGame.lastTime;
+            survivorGame.lastTime = currentTime;
+            
+            if (!survivorGame.paused) {
+                updateGame(deltaTime);
+            }
+            
+            renderGame();
+            updateUI();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateGame(deltaTime) {
+            // 更新玩家位置
+            updatePlayer();
+            
+            // 生成敌人
+            spawnEnemies();
+            
+            // 更新敌人
+            updateEnemies(deltaTime);
+            
+            // 更新武器和射击
+            updateWeapons(deltaTime);
+            
+            // 更新子弹
+            updateProjectiles(deltaTime);
+            
+            // 更新粒子效果
+            updateParticles(deltaTime);
+            
+            // 更新拾取物
+            updatePickups(deltaTime);
+            
+            // 检查碰撞
+            checkCollisions();
+            
+            // 生命恢复
+            if (survivorGame.hasHealthRegen) {
+                const regenRate = survivorGame.healthRegenRate || 2;
+                survivorGame.player.health = Math.min(
+                    survivorGame.player.maxHealth,
+                    survivorGame.player.health + deltaTime * 0.001 * regenRate
+                );
+            }
+            
+            // 检查游戏结束
+            if (survivorGame.player.health <= 0) {
+                gameOver();
+            }
+        }
+
+        function updatePlayer() {
+            const player = survivorGame.player;
+            
+            // 移动控制
+            if (survivorGame.keys['w'] || survivorGame.keys['arrowup']) {
+                player.y = Math.max(player.radius, player.y - player.speed);
+            }
+            if (survivorGame.keys['s'] || survivorGame.keys['arrowdown']) {
+                player.y = Math.min(survivorGame.canvas.height - player.radius, player.y + player.speed);
+            }
+            if (survivorGame.keys['a'] || survivorGame.keys['arrowleft']) {
+                player.x = Math.max(player.radius, player.x - player.speed);
+            }
+            if (survivorGame.keys['d'] || survivorGame.keys['arrowright']) {
+                player.x = Math.min(survivorGame.canvas.width - player.radius, player.x + player.speed);
+            }
+        }
+
+        function spawnEnemies() {
+            // 根据时间和调试参数增加敌人生成频率
+            const gameTime = (Date.now() - survivorGame.startTime) / 1000;
+            const spawnRate = Math.min(
+                survivorGame.params.spawnRateBase + gameTime * survivorGame.params.spawnRateGrowth, 
+                survivorGame.params.spawnRateMax
+            );
+            
+            if (Math.random() < spawnRate) {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                switch(side) {
+                    case 0: // 上
+                        x = Math.random() * survivorGame.canvas.width;
+                        y = -20;
+                        break;
+                    case 1: // 右
+                        x = survivorGame.canvas.width + 20;
+                        y = Math.random() * survivorGame.canvas.height;
+                        break;
+                    case 2: // 下
+                        x = Math.random() * survivorGame.canvas.width;
+                        y = survivorGame.canvas.height + 20;
+                        break;
+                    case 3: // 左
+                        x = -20;
+                        y = Math.random() * survivorGame.canvas.height;
+                        break;
+                }
+                
+                const typeIndex = Math.floor(Math.random() * survivorGame.enemyTypes.length);
+                const type = survivorGame.enemyTypes[typeIndex];
+                
+                survivorGame.enemies.push({
+                    x: x,
+                    y: y,
+                    ...type,
+                    maxHealth: type.health,
+                    lastAttack: 0
+                });
+            }
+        }
+
+        function updateEnemies(deltaTime) {
+            survivorGame.enemies.forEach((enemy, index) => {
+                // 处理减速效果
+                if (enemy.slowEffect > 0) {
+                    enemy.slowEffect -= deltaTime;
+                }
+                
+                // 移动向玩家
+                const dx = survivorGame.player.x - enemy.x;
+                const dy = survivorGame.player.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    const speedModifier = enemy.slowEffect > 0 ? 0.3 : 1;
+                    enemy.x += (dx / distance) * enemy.speed * speedModifier;
+                    enemy.y += (dy / distance) * enemy.speed * speedModifier;
+                }
+                
+                // 攻击玩家
+                if (distance < enemy.radius + survivorGame.player.radius + 5) {
+                    const now = Date.now();
+                    if (now - enemy.lastAttack > 1000) {
+                        survivorGame.player.health -= enemy.damage;
+                        enemy.lastAttack = now;
+                        
+                        // 击退效果
+                        if (distance > 0) {
+                            survivorGame.player.x += (dx / distance) * 10;
+                            survivorGame.player.y += (dy / distance) * 10;
+                        }
+                    }
+                }
+                
+                // 移除远离的敌人
+                if (distance > 1000) {
+                    survivorGame.enemies.splice(index, 1);
+                }
+            });
+        }
+
+        function updateWeapons(deltaTime) {
+            const now = Date.now();
+            
+            survivorGame.weapons.forEach(weapon => {
+                if (weapon.type === 'orbit') {
+                    // 旋转刀刃特殊处理
+                    weapon.angle = (weapon.angle || 0) + 0.1;
+                    const orbitX = survivorGame.player.x + Math.cos(weapon.angle) * weapon.range;
+                    const orbitY = survivorGame.player.y + Math.sin(weapon.angle) * weapon.range;
+                    
+                    // 检查是否击中敌人
+                    survivorGame.enemies.forEach((enemy, index) => {
+                        const dx = orbitX - enemy.x;
+                        const dy = orbitY - enemy.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 15 && now - weapon.lastFire > weapon.cooldown) {
+                            enemy.health -= weapon.damage;
+                            createParticles(enemy.x, enemy.y, weapon.color);
+                            weapon.lastFire = now;
+                            
+                            if (enemy.health <= 0) {
+                                survivorGame.kills++;
+                                survivorGame.score += enemy.exp * 10;
+                                createExpPickup(enemy.x, enemy.y, enemy.exp);
+                                survivorGame.enemies.splice(index, 1);
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                if (now - weapon.lastFire > weapon.cooldown) {
+                    if (weapon.type === 'heal') {
+                        // 治疗光环
+                        survivorGame.player.health = Math.min(
+                            survivorGame.player.maxHealth,
+                            survivorGame.player.health + weapon.healAmount
+                        );
+                        createParticles(survivorGame.player.x, survivorGame.player.y, weapon.color);
+                        weapon.lastFire = now;
+                        return;
+                    }
+                    
+                    if (weapon.type === 'chain') {
+                        // 雷电链
+                        let currentTarget = null;
+                        let closestDistance = weapon.range;
+                        
+                        survivorGame.enemies.forEach(enemy => {
+                            const dx = enemy.x - survivorGame.player.x;
+                            const dy = enemy.y - survivorGame.player.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < closestDistance) {
+                                currentTarget = enemy;
+                                closestDistance = distance;
+                            }
+                        });
+                        
+                        if (currentTarget) {
+                            const chainTargets = [currentTarget];
+                            let lastTarget = currentTarget;
+                            
+                            // 寻找连锁目标
+                            for (let i = 1; i < weapon.chainCount; i++) {
+                                let nextTarget = null;
+                                let nextDistance = weapon.range;
+                                
+                                survivorGame.enemies.forEach(enemy => {
+                                    if (chainTargets.includes(enemy)) return;
+                                    
+                                    const dx = enemy.x - lastTarget.x;
+                                    const dy = enemy.y - lastTarget.y;
+                                    const distance = Math.sqrt(dx * dx + dy * dy);
+                                    
+                                    if (distance < nextDistance) {
+                                        nextTarget = enemy;
+                                        nextDistance = distance;
+                                    }
+                                });
+                                
+                                if (nextTarget) {
+                                    chainTargets.push(nextTarget);
+                                    lastTarget = nextTarget;
+                                }
+                            }
+                            
+                            // 对所有连锁目标造成伤害
+                            chainTargets.forEach((target, index) => {
+                                setTimeout(() => {
+                                    target.health -= weapon.damage;
+                                    createParticles(target.x, target.y, weapon.color);
+                                    
+                                    if (target.health <= 0) {
+                                        survivorGame.kills++;
+                                        survivorGame.score += target.exp * 10;
+                                        createExpPickup(target.x, target.y, target.exp);
+                                        const enemyIndex = survivorGame.enemies.indexOf(target);
+                                        if (enemyIndex > -1) survivorGame.enemies.splice(enemyIndex, 1);
+                                    }
+                                }, index * 100);
+                            });
+                            
+                            weapon.lastFire = now;
+                        }
+                        return;
+                    }
+                    
+                    // 常规投射物武器
+                    let closestEnemy = null;
+                    let closestDistance = weapon.range;
+                    
+                    survivorGame.enemies.forEach(enemy => {
+                        const dx = enemy.x - survivorGame.player.x;
+                        const dy = enemy.y - survivorGame.player.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < closestDistance) {
+                            closestEnemy = enemy;
+                            closestDistance = distance;
+                        }
+                    });
+                    
+                    if (closestEnemy) {
+                        const dx = closestEnemy.x - survivorGame.player.x;
+                        const dy = closestEnemy.y - survivorGame.player.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        survivorGame.projectiles.push({
+                            x: survivorGame.player.x,
+                            y: survivorGame.player.y,
+                            vx: (dx / distance) * weapon.speed,
+                            vy: (dy / distance) * weapon.speed,
+                            damage: weapon.damage,
+                            radius: weapon.name === '火球术' ? 8 : 4,
+                            color: weapon.color,
+                            life: 1500,
+                            effect: weapon.effect,
+                            weaponName: weapon.name
+                        });
+                        
+                        weapon.lastFire = now;
+                    }
+                }
+            });
+        }
+
+        function createExpPickup(x, y, exp) {
+            survivorGame.pickups.push({
+                x: x,
+                y: y,
+                radius: 6,
+                type: 'exp',
+                value: exp,
+                color: '#00FF00',
+                life: 10000
+            });
+            
+            // 随机掉落血包
+            if (Math.random() < 0.15) {
+                survivorGame.pickups.push({
+                    x: x + Math.random() * 20 - 10,
+                    y: y + Math.random() * 20 - 10,
+                    radius: 8,
+                    type: 'health',
+                    value: 25,
+                    color: '#FF0000',
+                    life: 15000
+                });
+            }
+        }
+
+        function updateProjectiles(deltaTime) {
+            survivorGame.projectiles.forEach((projectile, index) => {
+                projectile.x += projectile.vx;
+                projectile.y += projectile.vy;
+                projectile.life -= deltaTime;
+                
+                // 移除过期子弹
+                if (projectile.life <= 0 || 
+                    projectile.x < 0 || projectile.x > survivorGame.canvas.width ||
+                    projectile.y < 0 || projectile.y > survivorGame.canvas.height) {
+                    survivorGame.projectiles.splice(index, 1);
+                }
+            });
+        }
+
+        function updateParticles(deltaTime) {
+            survivorGame.particles.forEach((particle, index) => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life -= deltaTime;
+                particle.alpha = particle.life / particle.maxLife;
+                
+                if (particle.life <= 0) {
+                    survivorGame.particles.splice(index, 1);
+                }
+            });
+        }
+
+        function updatePickups(deltaTime) {
+            survivorGame.pickups.forEach((pickup, index) => {
+                const dx = survivorGame.player.x - pickup.x;
+                const dy = survivorGame.player.y - pickup.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 自动吸取
+                if (distance < 50) {
+                    pickup.x += (dx / distance) * 5;
+                    pickup.y += (dy / distance) * 5;
+                }
+                
+                // 拾取
+                if (distance < survivorGame.player.radius + pickup.radius) {
+                    if (pickup.type === 'exp') {
+                        survivorGame.player.exp += pickup.value;
+                        checkLevelUp();
+                    } else if (pickup.type === 'health') {
+                        survivorGame.player.health = Math.min(
+                            survivorGame.player.maxHealth,
+                            survivorGame.player.health + pickup.value
+                        );
+                    }
+                    
+                    survivorGame.pickups.splice(index, 1);
+                }
+                
+                pickup.life -= deltaTime;
+                if (pickup.life <= 0) {
+                    survivorGame.pickups.splice(index, 1);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            // 子弹击中敌人
+            survivorGame.projectiles.forEach((projectile, pIndex) => {
+                survivorGame.enemies.forEach((enemy, eIndex) => {
+                    const dx = projectile.x - enemy.x;
+                    const dy = projectile.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < projectile.radius + enemy.radius) {
+                        // 伤害敌人
+                        enemy.health -= projectile.damage;
+                        
+                        // 创建粒子效果
+                        createParticles(enemy.x, enemy.y, enemy.color);
+                        
+                        // 移除子弹
+                        survivorGame.projectiles.splice(pIndex, 1);
+                        
+                        // 敌人死亡
+                        if (enemy.health <= 0) {
+                            survivorGame.kills++;
+                            survivorGame.score += enemy.exp * 10;
+                            
+                            // 爆炸效果（火球术）
+                            if (projectile.effect === 'explosion') {
+                                survivorGame.enemies.forEach(nearbyEnemy => {
+                                    const dx = nearbyEnemy.x - enemy.x;
+                                    const dy = nearbyEnemy.y - enemy.y;
+                                    const distance = Math.sqrt(dx * dx + dy * dy);
+                                    
+                                    if (distance < 50 && nearbyEnemy !== enemy) {
+                                        nearbyEnemy.health -= projectile.damage * 0.5;
+                                        createParticles(nearbyEnemy.x, nearbyEnemy.y, '#FF4500');
+                                    }
+                                });
+                            }
+                            
+                            // 减速效果（冰霜箭）
+                            if (projectile.effect === 'slow') {
+                                enemy.slowEffect = 3000; // 3秒减速
+                            }
+                            
+                            createExpPickup(enemy.x, enemy.y, enemy.exp);
+                            survivorGame.enemies.splice(eIndex, 1);
+                        } else if (projectile.effect === 'slow') {
+                            // 即使没死也会被减速
+                            enemy.slowEffect = 2000;
+                        }
+                    }
+                });
+            });
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 5; i++) {
+                survivorGame.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    color: color,
+                    radius: Math.random() * 3 + 1,
+                    life: 500,
+                    maxLife: 500,
+                    alpha: 1
+                });
+            }
+        }
+
+        function checkLevelUp() {
+            if (survivorGame.player.exp >= survivorGame.player.expToNext) {
+                survivorGame.player.level++;
+                survivorGame.player.exp -= survivorGame.player.expToNext;
+                survivorGame.player.expToNext = Math.floor(survivorGame.player.expToNext * 1.5);
+                
+                // 显示升级面板
+                showUpgradePanel();
+            }
+        }
+
+        function showUpgradePanel() {
+            survivorGame.paused = true;
+            const panel = document.getElementById('upgradePanel');
+            const options = document.getElementById('upgradeOptions');
+            
+            // 过滤可用的升级选项
+            const availableUpgrades = survivorGame.upgrades.filter(upgrade => 
+                !upgrade.condition || upgrade.condition()
+            );
+            
+            // 随机选择3个升级选项
+            const selectedUpgrades = [];
+            const upgradesCopy = [...availableUpgrades];
+            
+            for (let i = 0; i < Math.min(3, upgradesCopy.length); i++) {
+                const randomIndex = Math.floor(Math.random() * upgradesCopy.length);
+                selectedUpgrades.push(upgradesCopy.splice(randomIndex, 1)[0]);
+            }
+            
+            options.innerHTML = '';
+            selectedUpgrades.forEach((upgrade, index) => {
+                const option = document.createElement('div');
+                option.className = 'upgrade-option';
+                option.innerHTML = `
+                    <div class="upgrade-title">${upgrade.name}</div>
+                    <div class="upgrade-description">${upgrade.description}</div>
+                `;
+                option.onclick = () => {
+                    upgrade.apply();
+                    panel.style.display = 'none';
+                    survivorGame.paused = false;
+                };
+                options.appendChild(option);
+            });
+            
+            panel.style.display = 'block';
+        }
+
+        function renderGame() {
+            const ctx = survivorGame.ctx;
+            const canvas = survivorGame.canvas;
+            
+            // 清空画布
+            ctx.fillStyle = '#001122';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制粒子效果
+            survivorGame.particles.forEach(particle => {
+                ctx.save();
+                ctx.globalAlpha = particle.alpha;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+            
+            // 绘制拾取物
+            survivorGame.pickups.forEach(pickup => {
+                ctx.fillStyle = pickup.color;
+                ctx.beginPath();
+                ctx.arc(pickup.x, pickup.y, pickup.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 发光效果
+                ctx.shadowColor = pickup.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(pickup.x, pickup.y, pickup.radius - 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // 绘制敌人
+            survivorGame.enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.slowEffect > 0 ? '#87CEEB' : enemy.color;
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 减速效果视觉提示
+                if (enemy.slowEffect > 0) {
+                    ctx.strokeStyle = '#87CEEB';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(enemy.x, enemy.y, enemy.radius + 3, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // 血条
+                if (enemy.health < enemy.maxHealth) {
+                    const barWidth = enemy.radius * 2;
+                    const barHeight = 4;
+                    const barX = enemy.x - barWidth / 2;
+                    const barY = enemy.y - enemy.radius - 10;
+                    
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(barX, barY, barWidth, barHeight);
+                    
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(barX, barY, (enemy.health / enemy.maxHealth) * barWidth, barHeight);
+                }
+            });
+            
+            // 绘制旋转刀刃
+            survivorGame.weapons.forEach(weapon => {
+                if (weapon.type === 'orbit') {
+                    const orbitX = survivorGame.player.x + Math.cos(weapon.angle || 0) * weapon.range;
+                    const orbitY = survivorGame.player.y + Math.sin(weapon.angle || 0) * weapon.range;
+                    
+                    ctx.fillStyle = weapon.color;
+                    ctx.shadowColor = weapon.color;
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(orbitX, orbitY, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+            
+            // 绘制子弹
+            survivorGame.projectiles.forEach(projectile => {
+                ctx.fillStyle = projectile.color;
+                ctx.shadowColor = projectile.color;
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(projectile.x, projectile.y, projectile.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // 绘制玩家
+            ctx.fillStyle = '#00AAFF';
+            ctx.shadowColor = '#00AAFF';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(survivorGame.player.x, survivorGame.player.y, survivorGame.player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 暂停提示
+            if (survivorGame.paused && !document.getElementById('upgradePanel').style.display) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('游戏暂停', canvas.width / 2, canvas.height / 2);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('level').textContent = survivorGame.player.level;
+            document.getElementById('score').textContent = survivorGame.score;
+            document.getElementById('kills').textContent = survivorGame.kills;
+            
+            const gameTime = Math.floor((Date.now() - survivorGame.startTime) / 1000);
+            const minutes = Math.floor(gameTime / 60);
+            const seconds = gameTime % 60;
+            document.getElementById('time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            const healthPercent = (survivorGame.player.health / survivorGame.player.maxHealth) * 100;
+            document.getElementById('healthFill').style.width = `${Math.max(0, healthPercent)}%`;
+            
+            const expPercent = (survivorGame.player.exp / survivorGame.player.expToNext) * 100;
+            document.getElementById('expFill').style.width = `${expPercent}%`;
+        }
+
+        function gameOver() {
+            survivorGame.running = false;
+            const canvas = survivorGame.canvas;
+            const ctx = survivorGame.ctx;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#FF0000';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('游戏结束', canvas.width / 2, canvas.height / 2 - 50);
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '24px Arial';
+            ctx.fillText(`最终分数: ${survivorGame.score}`, canvas.width / 2, canvas.height / 2);
+            ctx.fillText(`击杀数: ${survivorGame.kills}`, canvas.width / 2, canvas.height / 2 + 30);
+            ctx.fillText(`等级: ${survivorGame.player.level}`, canvas.width / 2, canvas.height / 2 + 60);
+        }
+
+        // 调试面板功能
+        function applyPlayerParams() {
+            if (survivorGame.running) {
+                survivorGame.player.speed = parseFloat(document.getElementById('playerSpeed').value);
+                survivorGame.player.maxHealth = parseInt(document.getElementById('playerMaxHealth').value);
+                if (survivorGame.player.health > survivorGame.player.maxHealth) {
+                    survivorGame.player.health = survivorGame.player.maxHealth;
+                }
+                survivorGame.player.expToNext = parseInt(document.getElementById('expToNext').value);
+            }
+            console.log('玩家参数已更新');
+        }
+
+        function applySpawnParams() {
+            survivorGame.params.spawnRateBase = parseFloat(document.getElementById('spawnRateBase').value);
+            survivorGame.params.spawnRateGrowth = parseFloat(document.getElementById('spawnRateGrowth').value);
+            survivorGame.params.spawnRateMax = parseFloat(document.getElementById('spawnRateMax').value);
+            console.log('敌人生成参数已更新');
+        }
+
+        function applyBatParams() {
+            survivorGame.enemyTypes[0].health = parseInt(document.getElementById('batHealth').value);
+            survivorGame.enemyTypes[0].speed = parseFloat(document.getElementById('batSpeed').value);
+            survivorGame.enemyTypes[0].damage = parseInt(document.getElementById('batDamage').value);
+            survivorGame.enemyTypes[0].exp = parseInt(document.getElementById('batExp').value);
+            console.log('暗影蝙蝠参数已更新');
+        }
+
+        function applySkeletonParams() {
+            survivorGame.enemyTypes[1].health = parseInt(document.getElementById('skeletonHealth').value);
+            survivorGame.enemyTypes[1].speed = parseFloat(document.getElementById('skeletonSpeed').value);
+            survivorGame.enemyTypes[1].damage = parseInt(document.getElementById('skeletonDamage').value);
+            survivorGame.enemyTypes[1].exp = parseInt(document.getElementById('skeletonExp').value);
+            console.log('骷髅战士参数已更新');
+        }
+
+        function applyMageParams() {
+            survivorGame.enemyTypes[2].health = parseInt(document.getElementById('mageHealth').value);
+            survivorGame.enemyTypes[2].speed = parseFloat(document.getElementById('mageSpeed').value);
+            survivorGame.enemyTypes[2].damage = parseInt(document.getElementById('mageDamage').value);
+            survivorGame.enemyTypes[2].exp = parseInt(document.getElementById('mageExp').value);
+            console.log('暗黑法师参数已更新');
+        }
+
+        function applyWeaponParams() {
+            if (survivorGame.weapons.length > 0) {
+                survivorGame.weapons[0].damage = parseInt(document.getElementById('weaponDamage').value);
+                survivorGame.weapons[0].cooldown = parseInt(document.getElementById('weaponCooldown').value);
+                survivorGame.weapons[0].range = parseInt(document.getElementById('weaponRange').value);
+                survivorGame.weapons[0].speed = parseFloat(document.getElementById('weaponSpeed').value);
+            }
+            console.log('武器参数已更新');
+        }
+
+        function applyUpgradeParams() {
+            survivorGame.params.damageUpgradePercent = parseInt(document.getElementById('damageUpgrade').value);
+            survivorGame.params.speedUpgradePercent = parseInt(document.getElementById('speedUpgrade').value);
+            survivorGame.params.healthUpgradeAmount = parseInt(document.getElementById('healthUpgrade').value);
+            survivorGame.params.moveUpgradePercent = parseInt(document.getElementById('moveUpgrade').value);
+            
+            // 更新升级选项描述
+            survivorGame.upgrades[0].description = `武器伤害 +${survivorGame.params.damageUpgradePercent}%`;
+            survivorGame.upgrades[1].description = `攻击速度 +${survivorGame.params.speedUpgradePercent}%`;
+            survivorGame.upgrades[2].description = `最大血量 +${survivorGame.params.healthUpgradeAmount}`;
+            survivorGame.upgrades[3].description = `移动速度 +${survivorGame.params.moveUpgradePercent}%`;
+            
+            console.log('升级系数已更新');
+        }
+
+        // 快速调试模式
+        function setEasyMode() {
+            document.getElementById('spawnRateBase').value = '0.002';
+            document.getElementById('spawnRateGrowth').value = '0.0001';
+            document.getElementById('spawnRateMax').value = '0.015';
+            document.getElementById('batHealth').value = '15';
+            document.getElementById('batSpeed').value = '0.6';
+            document.getElementById('batDamage').value = '5';
+            document.getElementById('playerSpeed').value = '2.8';
+            applySpawnParams();
+            applyBatParams();
+            applyPlayerParams();
+            console.log('已切换到简单模式');
+        }
+
+        function setNormalMode() {
+            document.getElementById('spawnRateBase').value = '0.005';
+            document.getElementById('spawnRateGrowth').value = '0.0002';
+            document.getElementById('spawnRateMax').value = '0.025';
+            document.getElementById('batHealth').value = '25';
+            document.getElementById('batSpeed').value = '1.0';
+            document.getElementById('batDamage').value = '8';
+            document.getElementById('playerSpeed').value = '2.2';
+            applySpawnParams();
+            applyBatParams();
+            applyPlayerParams();
+            console.log('已切换到普通模式');
+        }
+
+        function setHardMode() {
+            document.getElementById('spawnRateBase').value = '0.01';
+            document.getElementById('spawnRateGrowth').value = '0.0005';
+            document.getElementById('spawnRateMax').value = '0.05';
+            document.getElementById('batHealth').value = '40';
+            document.getElementById('batSpeed').value = '1.5';
+            document.getElementById('batDamage').value = '12';
+            document.getElementById('playerSpeed').value = '1.8';
+            applySpawnParams();
+            applyBatParams();
+            applyPlayerParams();
+            console.log('已切换到困难模式');
+        }
+
+        function setTestMode() {
+            document.getElementById('spawnRateBase').value = '0.02';
+            document.getElementById('spawnRateGrowth').value = '0.001';
+            document.getElementById('spawnRateMax').value = '0.1';
+            document.getElementById('weaponDamage').value = '100';
+            document.getElementById('weaponCooldown').value = '200';
+            document.getElementById('playerSpeed').value = '5';
+            document.getElementById('playerMaxHealth').value = '500';
+            applySpawnParams();
+            applyWeaponParams();
+            applyPlayerParams();
+            console.log('已切换到测试模式');
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initSurvivorGame();
+            console.log('暗夜幸存者开发调试版已加载');
+        });
+    </script>
+</body>
+</html>
