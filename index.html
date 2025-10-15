@@ -950,8 +950,11 @@
                 this.pickups = [];
                 this.damageNumbers = [];
                 
+                
                 // 开始游戏循环
                 this.lastTime = performance.now();
+                
+                
                 this.gameLoop();
             }
             
@@ -990,6 +993,7 @@
                 
                 // 生成敌人
                 this.spawnEnemies(deltaTime);
+                
                 
                 // 更新敌人
                 this.enemies = this.enemies.filter(enemy => {
@@ -1131,10 +1135,14 @@
                 this.projectiles.forEach(p => p.render(this.ctx));
                 
                 // 绘制敌人
+                // 绘制敌人
                 this.enemies.forEach(e => e.render(this.ctx));
                 
                 // 绘制玩家
-                this.player.render(this.ctx);
+                if (this.player) {
+                    this.player.render(this.ctx);
+                }
+                
             }
             
             spawnEnemies(deltaTime) {

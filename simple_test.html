@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单游戏测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 0 auto;
+            background: #1a1a2e;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #222;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>简单游戏测试</h1>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+    </div>
+    <div>
+        <button onclick="startTest()">开始测试</button>
+        <button onclick="addEnemy()">添加敌人</button>
+        <button onclick="clearDebug()">清空调试</button>
+    </div>
+    <div id="debug">调试信息将显示在这里...\n</div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const debug = document.getElementById('debug');
+        
+        let gameRunning = false;
+        let player = null;
+        let enemies = [];
+        let lastTime = 0;
+        
+        function log(message) {
+            console.log(message);
+            debug.textContent += message + '\n';
+            debug.scrollTop = debug.scrollHeight;
+        }
+        
+        function clearDebug() {
+            debug.textContent = '';
+        }
+        
+        // 简单的玩家类
+        class SimplePlayer {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 20;
+                this.color = '#FFD700';
+                this.speed = 200;
+            }
+            
+            update(deltaTime, keys) {
+                if (keys['w'] || keys['W'] || keys['ArrowUp']) this.y -= this.speed * deltaTime;
+                if (keys['s'] || keys['S'] || keys['ArrowDown']) this.y += this.speed * deltaTime;
+                if (keys['a'] || keys['A'] || keys['ArrowLeft']) this.x -= this.speed * deltaTime;
+                if (keys['d'] || keys['D'] || keys['ArrowRight']) this.x += this.speed * deltaTime;
+                
+                // 边界检查
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+        
+        // 简单的敌人类
+        class SimpleEnemy {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 15;
+                this.color = '#ff0000';
+                this.speed = 50;
+                this.health = 30;
+            }
+            
+            update(deltaTime, player) {
+                // 向玩家移动
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0) {
+                    this.x += (dx / dist) * this.speed * deltaTime;
+                    this.y += (dy / dist) * this.speed * deltaTime;
+                }
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+        
+        const keys = {};
+        
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        function startTest() {
+            log('开始测试游戏');
+            player = new SimplePlayer(canvas.width / 2, canvas.height / 2);
+            enemies = [];
+            gameRunning = true;
+            lastTime = performance.now();
+            gameLoop();
+            log('玩家创建在: ' + player.x + ', ' + player.y);
+        }
+        
+        function addEnemy() {
+            if (!gameRunning) {
+                log('请先开始游戏');
+                return;
+            }
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            enemies.push(new SimpleEnemy(x, y));
+            log('添加敌人，总数: ' + enemies.length);
+        }
+        
+        function gameLoop(currentTime = performance.now()) {
+            if (!gameRunning) return;
+            
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            // 更新
+            if (player) {
+                player.update(deltaTime, keys);
+            }
+            
+            enemies.forEach(enemy => {
+                if (player) {
+                    enemy.update(deltaTime, player);
+                }
+            });
+            
+            // 渲染
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function render() {
+            // 清空画布
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制网格
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.1)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // 绘制敌人
+            enemies.forEach(enemy => enemy.render(ctx));
+            
+            // 绘制玩家
+            if (player) {
+                player.render(ctx);
+            }
+            
+            // 绘制信息
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.fillText('玩家: ' + (player ? '存在' : '不存在'), 10, 30);
+            ctx.fillText('敌人数量: ' + enemies.length, 10, 50);
+            ctx.fillText('游戏状态: ' + (gameRunning ? '运行中' : '停止'), 10, 70);
+        }
+        
+        log('页面加载完成，点击"开始测试"按钮开始');
+    </script>
+</body>
+</html>

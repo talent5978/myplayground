@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 0 auto;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #222;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>游戏测试页面</h1>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
+    </div>
+    <div id="debug">调试信息将显示在这里...</div>
+    
+    <script>
+        // 简单的测试脚本
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const debug = document.getElementById('debug');
+        
+        function log(message) {
+            console.log(message);
+            debug.textContent += message + '\n';
+        }
+        
+        log('页面加载完成');
+        log('Canvas尺寸: ' + canvas.width + 'x' + canvas.height);
+        
+        // 测试绘制
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(100, 100, 50, 50);
+        log('绘制了红色方块');
+        
+        // 测试点击事件
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            log('点击位置: ' + x + ', ' + y);
+        });
+    </script>
+</body>
+</html>
