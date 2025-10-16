@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整游戏测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 0 auto;
+            background: #1a1a2e;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background: #222;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>完整游戏测试</h1>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
+    </div>
+    
+    <div class="status">
+        <div>游戏状态: <span id="gameState">未开始</span></div>
+        <div>玩家位置: <span id="playerPos">无</span></div>
+        <div>敌人数: <span id="enemyCount">0</span></div>
+        <div>游戏时间: <span id="gameTime">0</span></div>
+        <div>波次: <span id="wave">0</span></div>
+    </div>
+    
+    <div>
+        <button onclick="startGame()">开始游戏</button>
+        <button onclick="addEnemy()">添加敌人</button>
+        <button onclick="pauseGame()">暂停/继续</button>
+        <button onclick="clearDebug()">清空调试</button>
+    </div>
+    
+    <div id="debug">调试信息将显示在这里...\n</div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const debug = document.getElementById('debug');
+        
+        let game = null;
+        let gameRunning = false;
+        let lastTime = 0;
+        
+        function log(message) {
+            console.log(message);
+            debug.textContent += message + '\n';
+            debug.scrollTop = debug.scrollHeight;
+        }
+        
+        function clearDebug() {
+            debug.textContent = '';
+        }
+        
+        function updateStatus() {
+            if (game) {
+                document.getElementById('gameState').textContent = game.state;
+                if (game.player) {
+                    document.getElementById('playerPos').textContent = 
+                        Math.round(game.player.x) + ', ' + Math.round(game.player.y);
+                } else {
+                    document.getElementById('playerPos').textContent = '无';
+                }
+                document.getElementById('enemyCount').textContent = game.enemies.length;
+                document.getElementById('gameTime').textContent = Math.round(game.gameTime || 0);
+                document.getElementById('wave').textContent = game.wave || 0;
+            }
+        }
+        
+        // 简化的游戏类
+        class TestGame {
+            constructor() {
+                this.canvas = canvas;
+                this.ctx = ctx;
+                this.width = canvas.width;
+                this.height = canvas.height;
+                this.state = 'menu';
+                this.currentLevel = null;
+                this.player = null;
+                this.enemies = [];
+                this.projectiles = [];
+                this.particles = [];
+                this.pickups = [];
+                this.damageNumbers = [];
+                this.gameTime = 0;
+                this.kills = 0;
+                this.wave = 0;
+                this.waveTimer = 0;
+                this.keys = {};
+                this.testSpawnTimer = 0;
+                
+                log('游戏初始化完成');
+            }
+            
+            startLevel(level) {
+                log('开始关卡: ' + level.name);
+                this.currentLevel = level;
+                this.state = 'playing';
+                this.gameTime = 0;
+                this.kills = 0;
+                this.wave = 0;
+                this.waveTimer = 0;
+                
+                // 初始化玩家
+                this.player = new TestPlayer(this.width / 2, this.height / 2);
+                this.enemies = [];
+                this.projectiles = [];
+                this.particles = [];
+                this.pickups = [];
+                this.damageNumbers = [];
+                
+                log('玩家创建在: ' + this.player.x + ', ' + this.player.y);
+                log('关卡生成率: ' + this.currentLevel.enemySpawnRate);
+                
+                // 测试：立即生成一个敌人
+                this.enemies.push(new TestEnemy(this.width / 2 + 100, this.height / 2, 'zombie', 1));
+                log('强制生成测试敌人，总敌人数: ' + this.enemies.length);
+            }
+            
+            update(deltaTime) {
+                if (this.state !== 'playing') return;
+                
+                this.gameTime += deltaTime;
+                
+                // 更新波次
+                this.waveTimer += deltaTime;
+                if (this.waveTimer >= 30) {
+                    this.waveTimer = 0;
+                    this.wave++;
+                    log('新波次: ' + this.wave);
+                }
+                
+                // 更新玩家
+                if (this.player) {
+                    this.player.update(deltaTime, this.keys, this);
+                }
+                
+                // 生成敌人
+                this.spawnEnemies(deltaTime);
+                
+                // 更新敌人
+                this.enemies = this.enemies.filter(enemy => {
+                    enemy.update(deltaTime, this.player);
+                    
+                    // 检查与玩家碰撞
+                    if (this.player) {
+                        const dx = enemy.x - this.player.x;
+                        const dy = enemy.y - this.player.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < enemy.radius + this.player.radius) {
+                            this.player.takeDamage(enemy.damage);
+                            enemy.health = 0;
+                        }
+                    }
+                    
+                    if (enemy.health <= 0) {
+                        return false;
+                    }
+                    return true;
+                });
+                
+                // 测试：每2秒强制生成一个敌人
+                this.testSpawnTimer += deltaTime;
+                if (this.testSpawnTimer >= 2) {
+                    this.testSpawnTimer = 0;
+                    const x = Math.random() * this.width;
+                    const y = Math.random() * this.height;
+                    this.enemies.push(new TestEnemy(x, y, 'zombie', 1));
+                    log('强制生成敌人，总敌人数: ' + this.enemies.length);
+                }
+            }
+            
+            spawnEnemies(deltaTime) {
+                const spawnRate = this.currentLevel.enemySpawnRate * 10; // 提高10倍
+                const spawnChance = spawnRate * deltaTime;
+                
+                if (Math.random() < spawnChance) {
+                    const side = Math.floor(Math.random() * 4);
+                    let x, y;
+                    
+                    switch(side) {
+                        case 0: x = Math.random() * this.width; y = -30; break;
+                        case 1: x = this.width + 30; y = Math.random() * this.height; break;
+                        case 2: x = Math.random() * this.width; y = this.height + 30; break;
+                        case 3: x = -30; y = Math.random() * this.height; break;
+                    }
+                    
+                    const enemy = new TestEnemy(x, y, 'zombie', 1);
+                    this.enemies.push(enemy);
+                    log('生成敌人: ' + enemy.type + ' 在 ' + Math.round(x) + ', ' + Math.round(y));
+                }
+            }
+            
+            render() {
+                // 清空画布
+                this.ctx.fillStyle = '#1a1a2e';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // 绘制网格
+                this.ctx.strokeStyle = 'rgba(255, 215, 0, 0.1)';
+                this.ctx.lineWidth = 1;
+                for (let x = 0; x < this.width; x += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.height);
+                    this.ctx.stroke();
+                }
+                for (let y = 0; y < this.height; y += 50) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.width, y);
+                    this.ctx.stroke();
+                }
+                
+                // 绘制敌人
+                this.enemies.forEach(enemy => enemy.render(this.ctx));
+                
+                // 绘制玩家
+                if (this.player) {
+                    this.player.render(this.ctx);
+                }
+                
+                // 绘制信息
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '16px Arial';
+                this.ctx.fillText('玩家: ' + (this.player ? '存在' : '不存在'), 10, 30);
+                this.ctx.fillText('敌人数: ' + this.enemies.length, 10, 50);
+                this.ctx.fillText('游戏状态: ' + this.state, 10, 70);
+                this.ctx.fillText('时间: ' + Math.round(this.gameTime) + 's', 10, 90);
+                this.ctx.fillText('波次: ' + this.wave, 10, 110);
+            }
+        }
+        
+        class TestPlayer {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 20;
+                this.color = '#FFD700';
+                this.maxHealth = 100;
+                this.health = this.maxHealth;
+                this.moveSpeed = 200;
+                this.damage = 10;
+            }
+            
+            update(deltaTime, keys, game) {
+                let dx = 0, dy = 0;
+                
+                if (keys['w'] || keys['W'] || keys['ArrowUp']) dy -= 1;
+                if (keys['s'] || keys['S'] || keys['ArrowDown']) dy += 1;
+                if (keys['a'] || keys['A'] || keys['ArrowLeft']) dx -= 1;
+                if (keys['d'] || keys['D'] || keys['ArrowRight']) dx += 1;
+                
+                if (dx !== 0 || dy !== 0) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    this.x += (dx / dist) * this.moveSpeed * deltaTime;
+                    this.y += (dy / dist) * this.moveSpeed * deltaTime;
+                }
+                
+                // 边界检查
+                this.x = Math.max(this.radius, Math.min(game.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(game.height - this.radius, this.y));
+            }
+            
+            takeDamage(damage) {
+                this.health -= damage;
+                if (this.health <= 0) {
+                    this.health = 0;
+                    log('玩家死亡!');
+                }
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 绘制血条
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(this.x - 25, this.y - 35, 50, 5);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(this.x - 25, this.y - 35, (this.health / this.maxHealth) * 50, 5);
+            }
+        }
+        
+        class TestEnemy {
+            constructor(x, y, type, healthMultiplier = 1) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.radius = 15;
+                this.maxHealth = 30 * healthMultiplier;
+                this.health = this.maxHealth;
+                this.speed = 80;
+                this.damage = 10;
+                this.color = '#00ff00';
+            }
+            
+            update(deltaTime, player) {
+                if (!player) return;
+                
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0) {
+                    this.x += (dx / dist) * this.speed * deltaTime;
+                    this.y += (dy / dist) * this.speed * deltaTime;
+                }
+            }
+            
+            render(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                // 绘制血条
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(this.x - 15, this.y - 25, 30, 3);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(this.x - 15, this.y - 25, (this.health / this.maxHealth) * 30, 3);
+            }
+        }
+        
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (game) game.keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (game) game.keys[e.key] = false;
+        });
+        
+        function startGame() {
+            if (game && game.state === 'playing') {
+                log('游戏已在运行中');
+                return;
+            }
+            
+            log('开始游戏');
+            game = new TestGame();
+            const testLevel = {
+                name: '测试关卡',
+                enemySpawnRate: 2,
+                enemyHealthMultiplier: 1,
+                duration: 300
+            };
+            
+            game.startLevel(testLevel);
+            gameRunning = true;
+            lastTime = performance.now();
+            gameLoop();
+        }
+        
+        function addEnemy() {
+            if (!game || game.state !== 'playing') {
+                log('请先开始游戏');
+                return;
+            }
+            const x = Math.random() * game.width;
+            const y = Math.random() * game.height;
+            game.enemies.push(new TestEnemy(x, y, 'zombie', 1));
+            log('手动添加敌人，总敌人数: ' + game.enemies.length);
+        }
+        
+        function pauseGame() {
+            if (!game) return;
+            
+            if (game.state === 'playing') {
+                game.state = 'paused';
+                gameRunning = false;
+                log('游戏暂停');
+            } else if (game.state === 'paused') {
+                game.state = 'playing';
+                gameRunning = true;
+                lastTime = performance.now();
+                gameLoop();
+                log('游戏继续');
+            }
+        }
+        
+        function gameLoop(currentTime = performance.now()) {
+            if (!gameRunning || !game) return;
+            
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            game.update(deltaTime);
+            game.render();
+            updateStatus();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        log('页面加载完成，点击"开始游戏"按钮开始');
+    </script>
+</body>
+</html>
