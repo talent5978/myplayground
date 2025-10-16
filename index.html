@@ -950,16 +950,24 @@
                 this.pickups = [];
                 this.damageNumbers = [];
                 
+                console.log('玩家创建完成:', this.player);
+                console.log('游戏状态:', this.state);
+                console.log('画布尺寸:', this.width, 'x', this.height);
+                
+                // 立即添加一个测试敌人
+                this.enemies.push(new Enemy(this.width / 2 + 100, this.height / 2, 'zombie', 1));
+                console.log('添加测试敌人，总敌人数:', this.enemies.length);
                 
                 // 开始游戏循环
                 this.lastTime = performance.now();
-                
-                
                 this.gameLoop();
             }
             
             gameLoop(currentTime = performance.now()) {
-                if (this.state !== 'playing') return;
+                if (this.state !== 'playing') {
+                    console.log('游戏循环停止，状态:', this.state);
+                    return;
+                }
                 
                 const deltaTime = (currentTime - this.lastTime) / 1000;
                 this.lastTime = currentTime;
@@ -1136,11 +1144,15 @@
                 
                 // 绘制敌人
                 // 绘制敌人
+                console.log('渲染敌人数量:', this.enemies.length);
                 this.enemies.forEach(e => e.render(this.ctx));
                 
                 // 绘制玩家
                 if (this.player) {
+                    console.log('渲染玩家位置:', this.player.x, this.player.y);
                     this.player.render(this.ctx);
+                } else {
+                    console.log('玩家不存在，无法渲染');
                 }
                 
             }

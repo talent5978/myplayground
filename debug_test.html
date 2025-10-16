@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #333;
+            display: block;
+            margin: 20px auto;
+            background: #1a1a2e;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 15px;
+            background: #222;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>调试测试</h1>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div>
+        <button onclick="testCanvas()">测试画布</button>
+        <button onclick="testPlayer()">测试玩家</button>
+        <button onclick="testEnemy()">测试敌人</button>
+        <button onclick="testGame()">测试游戏</button>
+        <button onclick="clearDebug()">清空调试</button>
+    </div>
+    <div id="debug">点击按钮开始测试...\n</div>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const debug = document.getElementById('debug');
+        
+        function log(message) {
+            console.log(message);
+            debug.textContent += message + '\n';
+            debug.scrollTop = debug.scrollHeight;
+        }
+        
+        function clearDebug() {
+            debug.textContent = '';
+        }
+        
+        function testCanvas() {
+            log('=== 测试画布 ===');
+            log('画布尺寸: ' + canvas.width + 'x' + canvas.height);
+            log('上下文: ' + (ctx ? '存在' : '不存在'));
+            
+            // 绘制测试图形
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(100, 100, 50, 50);
+            log('绘制了红色方块');
+            
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(200, 200, 30, 0, Math.PI * 2);
+            ctx.fill();
+            log('绘制了绿色圆圈');
+        }
+        
+        function testPlayer() {
+            log('=== 测试玩家 ===');
+            
+            class TestPlayer {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 20;
+                    this.color = '#FFD700';
+                    log('玩家创建: x=' + x + ', y=' + y);
+                }
+                
+                render(ctx) {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    log('玩家渲染: x=' + this.x + ', y=' + this.y);
+                }
+            }
+            
+            const player = new TestPlayer(400, 300);
+            player.render(ctx);
+            log('玩家测试完成');
+        }
+        
+        function testEnemy() {
+            log('=== 测试敌人 ===');
+            
+            class TestEnemy {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 15;
+                    this.color = '#ff0000';
+                    log('敌人创建: x=' + x + ', y=' + y);
+                }
+                
+                render(ctx) {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    log('敌人渲染: x=' + this.x + ', y=' + this.y);
+                }
+            }
+            
+            const enemy = new TestEnemy(500, 400);
+            enemy.render(ctx);
+            log('敌人测试完成');
+        }
+        
+        function testGame() {
+            log('=== 测试游戏循环 ===');
+            
+            class TestGame {
+                constructor() {
+                    this.canvas = canvas;
+                    this.ctx = ctx;
+                    this.width = canvas.width;
+                    this.height = canvas.height;
+                    this.state = 'playing';
+                    this.player = null;
+                    this.enemies = [];
+                    this.frameCount = 0;
+                    log('游戏初始化完成');
+                }
+                
+                start() {
+                    this.player = new TestPlayer(this.width / 2, this.height / 2);
+                    this.enemies = [new TestEnemy(200, 200), new TestEnemy(600, 400)];
+                    log('游戏开始，玩家和敌人已创建');
+                }
+                
+                update() {
+                    this.frameCount++;
+                    if (this.frameCount % 60 === 0) {
+                        log('游戏循环运行中，帧数: ' + this.frameCount);
+                    }
+                }
+                
+                render() {
+                    // 清空画布
+                    this.ctx.fillStyle = '#1a1a2e';
+                    this.ctx.fillRect(0, 0, this.width, this.height);
+                    
+                    // 绘制敌人
+                    this.enemies.forEach(enemy => enemy.render(this.ctx));
+                    
+                    // 绘制玩家
+                    if (this.player) {
+                        this.player.render(this.ctx);
+                    }
+                    
+                    // 绘制信息
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.fillText('帧数: ' + this.frameCount, 10, 30);
+                    this.ctx.fillText('敌人: ' + this.enemies.length, 10, 50);
+                }
+                
+                gameLoop() {
+                    this.update();
+                    this.render();
+                    
+                    if (this.frameCount < 300) { // 运行5秒
+                        requestAnimationFrame(() => this.gameLoop());
+                    } else {
+                        log('游戏循环测试完成');
+                    }
+                }
+            }
+            
+            class TestPlayer {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 20;
+                    this.color = '#FFD700';
+                }
+                
+                render(ctx) {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            class TestEnemy {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = 15;
+                    this.color = '#ff0000';
+                }
+                
+                render(ctx) {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            const game = new TestGame();
+            game.start();
+            game.gameLoop();
+        }
+        
+        log('调试测试页面加载完成');
+    </script>
+</body>
+</html>
